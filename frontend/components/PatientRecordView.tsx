@@ -16,13 +16,16 @@ import {
   MapPin,
   Heart,
   Shield,
-  Eye
+  Eye,
+  Trash2,
+  Sparkles
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AddMedicalRecordDialog } from './AddMedicalRecordDialog';
 import { CreateAlertDialog } from './CreateAlertDialog';
 import { DocumentViewer } from './DocumentViewer';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 import backend from '~backend/client';
 
 interface Patient {
@@ -58,7 +61,10 @@ export function PatientRecordView({
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [showCreateAlert, setShowCreateAlert] = useState(false);
   const [showDocumentViewer, setShowDocumentViewer] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [recordToDelete, setRecordToDelete] = useState<any>(null);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -71,6 +77,96 @@ export function PatientRecordView({
   const handleViewDocument = (record: any) => {
     setSelectedRecord(record);
     setShowDocumentViewer(true);
+  };
+
+  const handleDeleteRecord = (record: any) => {
+    setRecordToDelete(record);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!recordToDelete) return;
+
+    try {
+      await backend.health.deleteMedicalRecord({
+        record_id: recordToDelete.id,
+        user_id: doctorId,
+        user_role: 'doctor',
+      });
+
+      toast({
+        title: t('language') === 'hi' ? 'रिकॉर्ड डिलीट किया गया' : 'Record deleted',
+        description: t('language') === 'hi' 
+          ? 'मेडिकल रिकॉर्ड सफलतापूर्वक डिलीट किया गया है'
+          : 'Medical record has been deleted successfully',
+      });
+
+      refetchRecords();
+      setShowDeleteDialog(false);
+      setRecordToDelete(null);
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: t('language') === 'hi' ? 'डिलीट असफल' : 'Delete failed',
+        description: error.message || (t('language') === 'hi' ? 'रिकॉर्ड डिलीट करने में असफल' : 'Failed to delete record'),
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGenerateCombinedSummary = async () => {
+    if (!medicalRecords?.records.length) {
+      toast({
+        title: t('language') === 'hi' ? 'कोई दस्तावेज़ नहीं' : 'No documents',
+        description: t('language') === 'hi' 
+          ? 'संयुक्त सारांश तैयार करने के लिए कम से कम एक दस्तावेज़ होना चाहिए'
+          : 'At least one document is required to generate a combined summary',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const recordsWithFiles = medicalRecords.records.filter(record => record.file_url);
+    
+    if (recordsWithFiles.length === 0) {
+      toast({
+        title: t('language') === 'hi' ? 'कोई फाइल नहीं' : 'No files',
+        description: t('language') === 'hi' 
+          ? 'संयुक्त सारांश तैयार करने के लिए फाइल वाले दस्तावेज़ होने चाहिए'
+          : 'Documents with files are required to generate a combined summary',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingSummary(true);
+    try {
+      const response = await backend.ai.summarizeAllDocuments({
+        file_paths: recordsWithFiles.map(record => record.file_url!),
+        document_titles: recordsWithFiles.map(record => record.title),
+      });
+
+      // Show the combined summary in a dialog or toast
+      toast({
+        title: t('language') === 'hi' ? 'संयुक्त सारांश तैयार' : 'Combined Summary Generated',
+        description: t('language') === 'hi' 
+          ? 'सभी दस्तावेज़ों का संयुक्त सारांश तैयार किया गया है'
+          : 'Combined summary of all documents has been generated',
+      });
+
+      // You can display this in a modal or separate view
+      console.log('Combined Summary:', response.combined_summary);
+      
+    } catch (error: any) {
+      console.error('Combined summary error:', error);
+      toast({
+        title: t('language') === 'hi' ? 'सारांश त्रुटि' : 'Summary Error',
+        description: error.message || (t('language') === 'hi' ? 'संयुक्त सारांश तैयार करने में असफल' : 'Failed to generate combined summary'),
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingSummary(false);
+    }
   };
 
   const handleDownloadFile = async (fileName: string, fileUrl?: string) => {
@@ -251,10 +347,30 @@ export function PatientRecordView({
                         View all medical records for this patient
                       </CardDescription>
                     </div>
-                    <Button onClick={() => setShowAddRecord(true)} className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t('addRecord')}
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button
+                        onClick={handleGenerateCombinedSummary}
+                        disabled={isGeneratingSummary}
+                        variant="outline"
+                        className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200 text-purple-700 hover:bg-purple-100"
+                      >
+                        {isGeneratingSummary ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent mr-2"></div>
+                            {t('language') === 'hi' ? 'तैयार हो रहा है...' : 'Generating...'}
+                          </div>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            {t('language') === 'hi' ? 'सभी दस्तावेज़ों का सारांश' : 'Summary of All Documents'}
+                          </>
+                        )}
+                      </Button>
+                      <Button onClick={() => setShowAddRecord(true)} className="bg-blue-600 hover:bg-blue-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        {t('addRecord')}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -270,6 +386,12 @@ export function PatientRecordView({
                                 <Calendar className="h-3 w-3 mr-1" />
                                 {new Date(record.created_at).toLocaleDateString()}
                               </Badge>
+                              {record.doctor_summary && (
+                                <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                                  <Sparkles className="h-3 w-3 mr-1" />
+                                  {t('language') === 'hi' ? 'AI सारांश' : 'AI Summary'}
+                                </Badge>
+                              )}
                             </div>
                             {record.description && (
                               <p className="text-sm text-gray-600 mb-3">{record.description}</p>
@@ -307,6 +429,17 @@ export function PatientRecordView({
                               <Eye className="h-3 w-3 mr-1" />
                               {t('view')}
                             </Button>
+                            {record.doctor_id === doctorId && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => handleDeleteRecord(record)}
+                              >
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                {t('delete')}
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -338,7 +471,7 @@ export function PatientRecordView({
                     </div>
                     <CardTitle className="text-xl">{t('addMedicalRecord')}</CardTitle>
                     <CardDescription>
-                      Upload new medical documents, prescriptions, or test results
+                      Upload new medical documents, prescriptions, or test results with AI-powered summaries
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -380,6 +513,7 @@ export function PatientRecordView({
         onOpenChange={setShowAddRecord}
         patientId={patient.id}
         doctorId={doctorId}
+        userRole="doctor"
         onSuccess={() => {
           refetchRecords();
           setShowAddRecord(false);
@@ -400,6 +534,23 @@ export function PatientRecordView({
         open={showDocumentViewer}
         onOpenChange={setShowDocumentViewer}
         record={selectedRecord}
+        userRole="doctor"
+        userId={doctorId}
+        onDelete={() => {
+          refetchRecords();
+          setShowDocumentViewer(false);
+        }}
+      />
+
+      <DeleteConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+        title={t('language') === 'hi' ? 'रिकॉर्ड डिलीट करें' : 'Delete Record'}
+        description={t('language') === 'hi' 
+          ? 'क्या आप वाकई इस मेडिकल रिकॉर्ड को डिलीट करना चाहते हैं? यह क्रिया वापस नहीं की जा सकती।'
+          : 'Are you sure you want to delete this medical record? This action cannot be undone.'
+        }
       />
     </>
   );

@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
-import { Upload, FileText, X } from 'lucide-react';
+import { Upload, FileText, X, Sparkles } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import backend from '~backend/client';
 
@@ -17,6 +17,7 @@ interface AddMedicalRecordDialogProps {
   patientId: number;
   doctorId?: number;
   onSuccess: () => void;
+  userRole?: 'patient' | 'doctor';
 }
 
 export function AddMedicalRecordDialog({
@@ -25,6 +26,7 @@ export function AddMedicalRecordDialog({
   patientId,
   doctorId,
   onSuccess,
+  userRole = 'patient',
 }: AddMedicalRecordDialogProps) {
   const [formData, setFormData] = useState({
     title: '',
@@ -35,6 +37,7 @@ export function AddMedicalRecordDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState('');
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const { toast } = useToast();
   const { t } = useLanguage();
 
@@ -108,6 +111,46 @@ export function AddMedicalRecordDialog({
     });
   };
 
+  const generateAISummary = async (recordId: number, filePath: string) => {
+    setIsGeneratingSummary(true);
+    try {
+      // Generate summary for the appropriate user type
+      const summaryResponse = await backend.ai.summarizeDocument({
+        file_path: filePath,
+        user_type: userRole,
+        document_type: formData.record_type,
+      });
+
+      // Update the record with the generated summary
+      const updateData = userRole === 'patient' 
+        ? { patient_summary: summaryResponse.summary }
+        : { doctor_summary: summaryResponse.summary };
+
+      await backend.health.updateRecordSummary({
+        record_id: recordId,
+        ...updateData,
+      });
+
+      toast({
+        title: t('language') === 'hi' ? 'AI सारांश तैयार' : 'AI Summary Generated',
+        description: t('language') === 'hi' 
+          ? 'आपके दस्तावेज़ का AI सारांश सफलतापूर्वक तैयार किया गया है'
+          : 'AI summary for your document has been generated successfully',
+      });
+    } catch (error: any) {
+      console.error('Error generating AI summary:', error);
+      toast({
+        title: t('language') === 'hi' ? 'AI सारांश त्रुटि' : 'AI Summary Error',
+        description: t('language') === 'hi' 
+          ? 'AI सारांश तैयार करने में असफल, लेकिन दस्तावेज़ सफलतापूर्वक अपलोड किया गया'
+          : 'Failed to generate AI summary, but document was uploaded successfully',
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingSummary(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -145,7 +188,7 @@ export function AddMedicalRecordDialog({
           // Upload the file to the signed URL with progress tracking
           await uploadFileWithProgress(formData.file, uploadResponse.upload_url);
 
-          fileUrl = uploadResponse.file_path; // Use file_path instead of file_url
+          fileUrl = uploadResponse.file_path;
           fileName = formData.file.name;
           fileSize = formData.file.size;
 
@@ -169,7 +212,7 @@ export function AddMedicalRecordDialog({
         file_size: fileSize,
       });
 
-      await backend.health.addMedicalRecord({
+      const recordResponse = await backend.health.addMedicalRecord({
         patient_id: patientId,
         doctor_id: doctorId,
         title: formData.title,
@@ -184,6 +227,11 @@ export function AddMedicalRecordDialog({
         title: t('success'),
         description: t('recordAdded'),
       });
+
+      // Generate AI summary if file was uploaded
+      if (fileUrl) {
+        await generateAISummary(recordResponse.record_id, fileUrl);
+      }
 
       // Reset form
       setFormData({
@@ -227,8 +275,8 @@ export function AddMedicalRecordDialog({
           </DialogTitle>
           <DialogDescription>
             {t('language') === 'hi' 
-              ? 'मरीज़ के लिए एक नया मेडिकल रिकॉर्ड जोड़ें। आप PDF, छवियां, या रिपोर्ट जैसी फाइलें संलग्न कर सकते हैं।'
-              : 'Add a new medical record for the patient. You can attach files like PDFs, images, or reports.'
+              ? 'मरीज़ के लिए एक नया मेडिकल रिकॉर्ड जोड़ें। आप PDF, छवियां, या रिपोर्ट जैसी फाइलें संलग्न कर सकते हैं। AI स्वचालित रूप से आपके दस्तावेज़ का सारांश तैयार करेगा।'
+              : 'Add a new medical record for the patient. You can attach files like PDFs, images, or reports. AI will automatically generate a summary of your document.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -289,7 +337,15 @@ export function AddMedicalRecordDialog({
           </div>
 
           <div>
-            <Label htmlFor="file" className="text-sm font-medium">{t('attachFile')}</Label>
+            <Label htmlFor="file" className="text-sm font-medium">
+              {t('attachFile')}
+              {formData.file && (
+                <span className="ml-2 text-xs text-blue-600 flex items-center">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  {t('language') === 'hi' ? 'AI सारांश तैयार होगा' : 'AI summary will be generated'}
+                </span>
+              )}
+            </Label>
             
             {!formData.file ? (
               <div className="mt-1">
@@ -303,6 +359,10 @@ export function AddMedicalRecordDialog({
                       <span className="font-semibold">{t('clickToUpload')}</span> {t('dragAndDrop')}
                     </p>
                     <p className="text-xs text-gray-500">{t('fileTypeRestriction')}</p>
+                    <p className="text-xs text-blue-600 mt-1 flex items-center">
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      {t('language') === 'hi' ? 'AI सारांश स्वचालित रूप से तैयार होगा' : 'AI summary will be generated automatically'}
+                    </p>
                   </div>
                   <Input
                     id="file"
@@ -348,6 +408,21 @@ export function AddMedicalRecordDialog({
               <p className="text-xs text-gray-600 mt-1">
                 {Math.round(uploadProgress)}% {t('language') === 'hi' ? 'अपलोड हो गया' : 'uploaded'}
               </p>
+            </div>
+          )}
+
+          {isGeneratingSummary && (
+            <div>
+              <Label className="text-sm font-medium flex items-center">
+                <Sparkles className="h-4 w-4 mr-1 text-blue-600" />
+                {t('language') === 'hi' ? 'AI सारांश तैयार किया जा रहा है...' : 'Generating AI summary...'}
+              </Label>
+              <div className="mt-1 flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                <span className="text-sm text-gray-600">
+                  {t('language') === 'hi' ? 'कृपया प्रतीक्षा करें...' : 'Please wait...'}
+                </span>
+              </div>
             </div>
           )}
 

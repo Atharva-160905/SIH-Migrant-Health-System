@@ -4,13 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { QrCode, FileText, Users, Plus, Download, Eye } from 'lucide-react';
+import { QrCode, FileText, Users, Plus, Download, Eye, Trash2, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '@/components/ui/use-toast';
 import { AddMedicalRecordDialog } from '../components/AddMedicalRecordDialog';
 import { AccessRequestDialog } from '../components/AccessRequestDialog';
 import { DocumentViewer } from '../components/DocumentViewer';
+import { DeleteConfirmDialog } from '../components/DeleteConfirmDialog';
 import backend from '~backend/client';
 
 export function PatientDashboard() {
@@ -20,7 +21,9 @@ export function PatientDashboard() {
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [showAccessRequests, setShowAccessRequests] = useState(false);
   const [showDocumentViewer, setShowDocumentViewer] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [recordToDelete, setRecordToDelete] = useState<any>(null);
 
   const { data: medicalRecords, refetch: refetchRecords } = useQuery({
     queryKey: ['medical-records', profile?.id],
@@ -55,6 +58,41 @@ export function PatientDashboard() {
   const handleViewDocument = (record: any) => {
     setSelectedRecord(record);
     setShowDocumentViewer(true);
+  };
+
+  const handleDeleteRecord = (record: any) => {
+    setRecordToDelete(record);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!recordToDelete || !profile?.id) return;
+
+    try {
+      await backend.health.deleteMedicalRecord({
+        record_id: recordToDelete.id,
+        user_id: profile.id,
+        user_role: 'patient',
+      });
+
+      toast({
+        title: t('language') === 'hi' ? 'रिकॉर्ड डिलीट किया गया' : 'Record deleted',
+        description: t('language') === 'hi' 
+          ? 'मेडिकल रिकॉर्ड सफलतापूर्वक डिलीट किया गया है'
+          : 'Medical record has been deleted successfully',
+      });
+
+      refetchRecords();
+      setShowDeleteDialog(false);
+      setRecordToDelete(null);
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: t('language') === 'hi' ? 'डिलीट असफल' : 'Delete failed',
+        description: error.message || (t('language') === 'hi' ? 'रिकॉर्ड डिलीट करने में असफल' : 'Failed to delete record'),
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDownloadFile = async (fileName: string, fileUrl?: string) => {
@@ -219,7 +257,7 @@ export function PatientDashboard() {
                     {t('medicalRecords')}
                   </CardTitle>
                   <CardDescription>
-                    View and manage your medical records and documents
+                    View and manage your medical records and documents with AI-powered summaries
                   </CardDescription>
                 </div>
                 <Button onClick={() => setShowAddRecord(true)} className="bg-blue-600 hover:bg-blue-700">
@@ -237,6 +275,12 @@ export function PatientDashboard() {
                         <div className="flex items-center space-x-2 mb-2">
                           <h3 className="font-medium text-lg">{record.title}</h3>
                           {getRecordTypeBadge(record.record_type)}
+                          {record.patient_summary && (
+                            <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                              <Sparkles className="h-3 w-3 mr-1" />
+                              {t('language') === 'hi' ? 'AI सारांश उपलब्ध' : 'AI Summary Available'}
+                            </Badge>
+                          )}
                         </div>
                         {record.description && (
                           <p className="text-sm text-gray-600 mb-3">{record.description}</p>
@@ -277,6 +321,15 @@ export function PatientDashboard() {
                           <Eye className="h-3 w-3 mr-1" />
                           {t('view')}
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => handleDeleteRecord(record)}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          {t('delete')}
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -286,7 +339,7 @@ export function PatientDashboard() {
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">{t('noRecords')}</h3>
                     <p className="text-gray-600 mb-4">
-                      Get started by adding your first medical record
+                      Get started by adding your first medical record with AI-powered summary
                     </p>
                     <Button onClick={() => setShowAddRecord(true)} className="bg-blue-600 hover:bg-blue-700">
                       <Plus className="h-4 w-4 mr-2" />
@@ -371,6 +424,7 @@ export function PatientDashboard() {
         open={showAddRecord}
         onOpenChange={setShowAddRecord}
         patientId={profile?.id || 0}
+        userRole="patient"
         onSuccess={() => {
           refetchRecords();
         }}
@@ -387,6 +441,23 @@ export function PatientDashboard() {
         open={showDocumentViewer}
         onOpenChange={setShowDocumentViewer}
         record={selectedRecord}
+        userRole="patient"
+        userId={profile?.id}
+        onDelete={() => {
+          refetchRecords();
+          setShowDocumentViewer(false);
+        }}
+      />
+
+      <DeleteConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={confirmDelete}
+        title={t('language') === 'hi' ? 'रिकॉर्ड डिलीट करें' : 'Delete Record'}
+        description={t('language') === 'hi' 
+          ? 'क्या आप वाकई इस मेडिकल रिकॉर्ड को डिलीट करना चाहते हैं? यह क्रिया वापस नहीं की जा सकती।'
+          : 'Are you sure you want to delete this medical record? This action cannot be undone.'
+        }
       />
     </div>
   );

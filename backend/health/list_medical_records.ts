@@ -1,6 +1,23 @@
 import { api } from "encore.dev/api";
 import { healthDB } from "./db";
-import { MedicalRecordWithDoctor } from "./types";
+
+export interface MedicalRecordWithDoctor {
+  id: number;
+  patient_id: number;
+  doctor_id?: number;
+  title: string;
+  description?: string;
+  record_type: 'prescription' | 'lab_result' | 'diagnosis' | 'treatment' | 'vaccination' | 'other';
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  patient_summary?: string;
+  doctor_summary?: string;
+  summary_generated_at?: Date;
+  created_at: Date;
+  updated_at: Date;
+  doctor_name?: string;
+}
 
 export interface ListMedicalRecordsRequest {
   patient_id: number;
