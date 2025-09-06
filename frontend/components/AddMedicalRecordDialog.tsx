@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
+import { Upload, FileText, X } from 'lucide-react';
 import backend from '~backend/client';
 
 interface AddMedicalRecordDialogProps {
@@ -30,11 +32,90 @@ export function AddMedicalRecordDialog({
     file: null as File | null,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [fileError, setFileError] = useState('');
   const { toast } = useToast();
+
+  const validateFile = (file: File): string | null => {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+
+    if (!allowedTypes.includes(file.type)) {
+      return 'Only PDF, JPG, JPEG, and PNG files are allowed';
+    }
+
+    if (file.size > maxSize) {
+      return 'File size must be less than 10MB';
+    }
+
+    return null;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const error = validateFile(file);
+      if (error) {
+        setFileError(error);
+        setFormData(prev => ({ ...prev, file: null }));
+        e.target.value = '';
+      } else {
+        setFileError('');
+        setFormData(prev => ({ ...prev, file }));
+      }
+    }
+  };
+
+  const removeFile = () => {
+    setFormData(prev => ({ ...prev, file: null }));
+    setFileError('');
+    const fileInput = document.getElementById('file') as HTMLInputElement;
+    if (fileInput) fileInput.value = '';
+  };
+
+  const uploadFileWithProgress = async (file: File, uploadUrl: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = (e.loaded / e.total) * 100;
+          setUploadProgress(progress);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}`));
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Upload failed'));
+      });
+
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.send(file);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.title.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a title for the medical record",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
+    setUploadProgress(0);
 
     try {
       let fileUrl = undefined;
@@ -48,18 +129,14 @@ export function AddMedicalRecordDialog({
           content_type: formData.file.type,
         });
 
-        // Upload the file to the signed URL
-        await fetch(uploadResponse.upload_url, {
-          method: 'PUT',
-          body: formData.file,
-          headers: {
-            'Content-Type': formData.file.type,
-          },
-        });
+        // Upload the file to the signed URL with progress tracking
+        await uploadFileWithProgress(formData.file, uploadResponse.upload_url);
 
         fileUrl = uploadResponse.file_url;
         fileName = formData.file.name;
         fileSize = formData.file.size;
+
+        setUploadProgress(100);
       }
 
       // Create medical record
@@ -75,18 +152,21 @@ export function AddMedicalRecordDialog({
       });
 
       toast({
-        title: "Record added",
+        title: "Success",
         description: "Medical record has been added successfully",
       });
 
+      // Reset form
       setFormData({
         title: '',
         description: '',
         record_type: 'other',
         file: null,
       });
-
+      setUploadProgress(0);
+      
       onSuccess();
+      onOpenChange(false);
     } catch (error: any) {
       console.error('Error adding record:', error);
       toast({
@@ -99,35 +179,51 @@ export function AddMedicalRecordDialog({
     }
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Medical Record</DialogTitle>
+          <DialogTitle className="flex items-center">
+            <FileText className="h-5 w-5 mr-2" />
+            Add Medical Record
+          </DialogTitle>
           <DialogDescription>
-            Add a new medical record for the patient
+            Add a new medical record for the patient. You can attach files like PDFs, images, or reports.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title" className="text-sm font-medium">
+              Title <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required
-              placeholder="Enter record title"
+              placeholder="Enter record title (e.g., Blood Test Results)"
+              className="mt-1"
             />
           </div>
 
           <div>
-            <Label htmlFor="record_type">Record Type *</Label>
+            <Label htmlFor="record_type" className="text-sm font-medium">
+              Record Type <span className="text-red-500">*</span>
+            </Label>
             <Select
               value={formData.record_type}
               onValueChange={(value: any) => setFormData(prev => ({ ...prev, record_type: value }))}
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-1">
                 <SelectValue placeholder="Select record type" />
               </SelectTrigger>
               <SelectContent>
@@ -142,35 +238,97 @@ export function AddMedicalRecordDialog({
           </div>
 
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-sm font-medium">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Enter record description"
+              placeholder="Enter record description or notes"
               rows={3}
+              className="mt-1"
             />
           </div>
 
           <div>
-            <Label htmlFor="file">Attach File</Label>
-            <Input
-              id="file"
-              type="file"
-              onChange={(e) => setFormData(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Supported formats: PDF, JPG, PNG, DOC, DOCX (Max 10MB)
-            </p>
+            <Label htmlFor="file" className="text-sm font-medium">Attach File</Label>
+            
+            {!formData.file ? (
+              <div className="mt-1">
+                <label
+                  htmlFor="file"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Upload className="w-8 h-8 mb-2 text-gray-400" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">PDF, PNG, JPG (MAX. 10MB)</p>
+                  </div>
+                  <Input
+                    id="file"
+                    type="file"
+                    onChange={handleFileChange}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            ) : (
+              <div className="mt-1 p-3 border rounded-lg bg-blue-50 border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-900">{formData.file.name}</p>
+                      <p className="text-xs text-blue-700">{formatFileSize(formData.file.size)}</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeFile}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {fileError && (
+              <p className="text-sm text-red-600 mt-1">{fileError}</p>
+            )}
           </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          {isLoading && uploadProgress > 0 && uploadProgress < 100 && (
+            <div>
+              <Label className="text-sm font-medium">Upload Progress</Label>
+              <Progress value={uploadProgress} className="mt-1" />
+              <p className="text-xs text-gray-600 mt-1">{Math.round(uploadProgress)}% uploaded</p>
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Adding...' : 'Add Record'}
+            <Button 
+              type="submit" 
+              disabled={isLoading || !!fileError}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? (
+                formData.file ? 'Uploading...' : 'Adding...'
+              ) : (
+                'Add Record'
+              )}
             </Button>
           </div>
         </form>
