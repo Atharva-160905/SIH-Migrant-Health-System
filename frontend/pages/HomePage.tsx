@@ -265,10 +265,12 @@ export function HomePage() {
             <Button 
   size="lg" 
   variant="outline" 
-  className="border-2 border-white text-white px-6 py-3 rounded-lg transition duration-300 hover:bg-white hover:text-gray-900 shadow-md"
+  className="border-2 border-white text-white px-6 py-3 rounded-lg transition duration-300 
+             bg-gray-900 hover:bg-white hover:text-gray-900 shadow-md"
 >
   Contact Support
 </Button>
+
 
           </div>
         </div>
