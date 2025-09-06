@@ -58,11 +58,8 @@ export function PatientDashboard() {
     }
 
     try {
-      // Extract the file path from the URL
-      const urlParts = fileUrl.split('/');
-      const filePath = urlParts[urlParts.length - 1];
-      
-      const response = await backend.storage.downloadFile({ file_path: filePath });
+      // Use the file path directly (it's already stored as the file path, not a signed URL)
+      const response = await backend.storage.downloadFile({ file_path: fileUrl });
       window.open(response.download_url, '_blank');
     } catch (error: any) {
       console.error('Download error:', error);

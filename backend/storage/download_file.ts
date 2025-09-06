@@ -16,17 +16,20 @@ export const downloadFile = api<DownloadFileRequest, DownloadFileResponse>(
   { expose: true, method: "GET", path: "/storage/download/:file_path" },
   async ({ file_path }) => {
     try {
+      // Decode the file path in case it's URL encoded
+      const decodedFilePath = decodeURIComponent(file_path);
+      
       // Check if file exists
-      const exists = await medicalFilesBucket.exists(file_path);
+      const exists = await medicalFilesBucket.exists(decodedFilePath);
       if (!exists) {
         throw APIError.notFound("File not found");
       }
 
       // Get file attributes
-      const attrs = await medicalFilesBucket.attrs(file_path);
+      const attrs = await medicalFilesBucket.attrs(decodedFilePath);
 
       // Generate signed download URL with 1 hour expiration
-      const { url } = await medicalFilesBucket.signedDownloadUrl(file_path, {
+      const { url } = await medicalFilesBucket.signedDownloadUrl(decodedFilePath, {
         ttl: 3600, // 1 hour
       });
 

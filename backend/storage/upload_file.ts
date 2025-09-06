@@ -34,21 +34,17 @@ export const uploadFile = api<UploadFileRequest, UploadFileResponse>(
       const timestamp = Date.now();
       const randomString = crypto.randomBytes(8).toString('hex');
       const fileExtension = getFileExtension(req.file_name);
-      const uniqueFileName = `${timestamp}-${randomString}-${sanitizeFileName(req.file_name)}`;
+      const sanitizedName = sanitizeFileName(req.file_name.replace(fileExtension, ''));
+      const uniqueFileName = `${timestamp}-${randomString}-${sanitizedName}${fileExtension}`;
       
       // Generate signed upload URL
       const { url: uploadUrl } = await medicalFilesBucket.signedUploadUrl(uniqueFileName, {
         ttl: 3600, // 1 hour
       });
 
-      // Generate a long-lived download URL for storing in database
-      const { url: downloadUrl } = await medicalFilesBucket.signedDownloadUrl(uniqueFileName, {
-        ttl: 365 * 24 * 3600, // 1 year
-      });
-
       return {
         upload_url: uploadUrl,
-        file_url: downloadUrl,
+        file_url: uniqueFileName, // Store just the file path, not a signed URL
         file_path: uniqueFileName,
       };
     } catch (error) {
@@ -71,5 +67,5 @@ function sanitizeFileName(fileName: string): string {
   return fileName
     .replace(/[^a-zA-Z0-9.-]/g, '_')
     .replace(/_{2,}/g, '_')
-    .substring(0, 100); // Limit length
+    .substring(0, 50); // Limit length
 }

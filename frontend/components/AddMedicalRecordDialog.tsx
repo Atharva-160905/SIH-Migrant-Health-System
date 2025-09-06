@@ -124,22 +124,43 @@ export function AddMedicalRecordDialog({
 
       // Upload file if provided
       if (formData.file) {
-        const uploadResponse = await backend.storage.uploadFile({
-          file_name: formData.file.name,
-          content_type: formData.file.type,
-        });
+        try {
+          console.log('Starting file upload for:', formData.file.name);
+          
+          const uploadResponse = await backend.storage.uploadFile({
+            file_name: formData.file.name,
+            content_type: formData.file.type,
+          });
 
-        // Upload the file to the signed URL with progress tracking
-        await uploadFileWithProgress(formData.file, uploadResponse.upload_url);
+          console.log('Upload response:', uploadResponse);
 
-        fileUrl = uploadResponse.file_url;
-        fileName = formData.file.name;
-        fileSize = formData.file.size;
+          // Upload the file to the signed URL with progress tracking
+          await uploadFileWithProgress(formData.file, uploadResponse.upload_url);
 
-        setUploadProgress(100);
+          fileUrl = uploadResponse.file_path; // Use file_path instead of file_url
+          fileName = formData.file.name;
+          fileSize = formData.file.size;
+
+          setUploadProgress(100);
+          console.log('File upload completed successfully');
+        } catch (uploadError) {
+          console.error('File upload error:', uploadError);
+          throw new Error(`File upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+        }
       }
 
       // Create medical record
+      console.log('Creating medical record with data:', {
+        patient_id: patientId,
+        doctor_id: doctorId,
+        title: formData.title,
+        description: formData.description || undefined,
+        record_type: formData.record_type,
+        file_url: fileUrl,
+        file_name: fileName,
+        file_size: fileSize,
+      });
+
       await backend.health.addMedicalRecord({
         patient_id: patientId,
         doctor_id: doctorId,
@@ -176,6 +197,7 @@ export function AddMedicalRecordDialog({
       });
     } finally {
       setIsLoading(false);
+      setUploadProgress(0);
     }
   };
 
