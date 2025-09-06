@@ -1,33 +1,113 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Users, FileText, AlertTriangle, Activity, TrendingUp } from 'lucide-react';
+import { 
+  User, 
+  Search, 
+  Users, 
+  FileText, 
+  AlertTriangle, 
+  Activity, 
+  TrendingUp,
+  Calendar,
+  Clock,
+  Phone,
+  Mail,
+  Stethoscope,
+  Hospital
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '@/components/ui/use-toast';
 import { PatientSearchDialog } from '../components/PatientSearchDialog';
-import { AddMedicalRecordDialog } from '../components/AddMedicalRecordDialog';
-import { CreateAlertDialog } from '../components/CreateAlertDialog';
+import { PatientRecordView } from '../components/PatientRecordView';
+import backend from '~backend/client';
 
 export function DoctorDashboard() {
   const { profile } = useAuth();
+  const { toast } = useToast();
   const [showPatientSearch, setShowPatientSearch] = useState(false);
-  const [showAddRecord, setShowAddRecord] = useState(false);
-  const [showCreateAlert, setShowCreateAlert] = useState(false);
-  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
+  const [showPatientRecord, setShowPatientRecord] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch doctor stats
+  const { data: doctorStats } = useQuery({
+    queryKey: ['doctor-stats', profile?.id],
+    queryFn: () => profile?.id ? backend.health.getDoctorStats({ doctor_id: profile.id }) : null,
+    enabled: !!profile?.id,
+  });
+
+  // Fetch patients with access
+  const { data: patientRecords } = useQuery({
+    queryKey: ['patient-records', profile?.id],
+    queryFn: () => profile?.id ? backend.health.listPatientRecords({ doctor_id: profile.id }) : null,
+    enabled: !!profile?.id,
+  });
+
+  // Fetch access requests made by doctor
+  const { data: accessRequests } = useQuery({
+    queryKey: ['access-requests-by-doctor', profile?.id],
+    queryFn: () => profile?.id ? backend.health.listAccessRequestsByDoctor({ doctor_id: profile.id }) : null,
+    enabled: !!profile?.id,
+  });
 
   const handlePatientSelect = (patientId: number) => {
-    setSelectedPatientId(patientId);
+    const patient = patientRecords?.patients.find(p => p.id === patientId);
+    if (patient) {
+      setSelectedPatient(patient);
+      setShowPatientRecord(true);
+    }
     setShowPatientSearch(false);
   };
 
-  const handleAddRecord = (patientId: number) => {
-    setSelectedPatientId(patientId);
-    setShowAddRecord(true);
+  const handleViewPatient = (patient: any) => {
+    setSelectedPatient(patient);
+    setShowPatientRecord(true);
   };
 
-  const handleCreateAlert = (patientId: number) => {
-    setSelectedPatientId(patientId);
-    setShowCreateAlert(true);
+  const filteredPatients = patientRecords?.patients.filter(patient =>
+    patient.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    patient.medical_id.toLowerCase().includes(searchQuery.toLowerCase())
+  ) || [];
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+      pending: "outline",
+      approved: "default",
+      denied: "destructive",
+    };
+    return <Badge variant={variants[status]}>{status}</Badge>;
+  };
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'record_added':
+        return <FileText className="h-4 w-4 text-blue-600" />;
+      case 'alert_raised':
+        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      case 'access_granted':
+        return <Users className="h-4 w-4 text-green-600" />;
+      default:
+        return <Activity className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getActivityText = (activity: any) => {
+    switch (activity.type) {
+      case 'record_added':
+        return `Added "${activity.description}" for ${activity.patient_name}`;
+      case 'alert_raised':
+        return `Raised alert: "${activity.description}" for ${activity.patient_name}`;
+      case 'access_granted':
+        return `Access granted by ${activity.patient_name}`;
+      default:
+        return activity.description;
+    }
   };
 
   return (
@@ -35,236 +115,339 @@ export function DoctorDashboard() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
         <p className="mt-2 text-gray-600">
-          Welcome, Dr. {profile?.first_name} {profile?.last_name}
+          Welcome back, Dr. {profile?.first_name} {profile?.last_name}
         </p>
-        {profile?.specialization && (
-          <p className="text-sm text-gray-500">
-            Specialization: {profile.specialization}
-          </p>
-        )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">0</p>
-                <p className="text-gray-600">Patients</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-green-500">
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <FileText className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">0</p>
-                <p className="text-gray-600">Records Added</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-orange-500">
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <Activity className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">0</p>
-                <p className="text-gray-600">Active Cases</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-red-500">
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">0</p>
-                <p className="text-gray-600">Alerts Raised</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setShowPatientSearch(true)}>
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <Search className="h-8 w-8 text-blue-600" />
-            </div>
-            <CardTitle className="text-xl">Search Patient</CardTitle>
-            <CardDescription>
-              Search for patients using Medical ID or QR code
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => setShowPatientSearch(true)} className="w-full bg-blue-600 hover:bg-blue-700">
-              Search Patient
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <FileText className="h-8 w-8 text-green-600" />
-            </div>
-            <CardTitle className="text-xl">Add Medical Record</CardTitle>
-            <CardDescription>
-              Add new medical records for patients with access
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => selectedPatientId ? handleAddRecord(selectedPatientId) : setShowPatientSearch(true)}
-              className="w-full bg-green-600 hover:bg-green-700"
-              variant="outline"
-            >
-              Add Record
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
-            </div>
-            <CardTitle className="text-xl">Create Alert</CardTitle>
-            <CardDescription>
-              Raise critical alerts to admin for emergency cases
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => selectedPatientId ? handleCreateAlert(selectedPatientId) : setShowPatientSearch(true)}
-              className="w-full bg-red-600 hover:bg-red-700"
-            >
-              Create Alert
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs defaultValue="dashboard" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="patients">My Patients</TabsTrigger>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="patients">Patient Records</TabsTrigger>
+          <TabsTrigger value="search">Search Patients</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="h-5 w-5 mr-2" />
-                  Performance Summary
-                </CardTitle>
-                <CardDescription>
-                  Your recent activity and performance metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Records Added This Week</span>
-                    <span className="font-semibold">0</span>
+        <TabsContent value="dashboard">
+          {/* Doctor Profile */}
+          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-100 border-blue-200">
+            <CardHeader>
+              <CardTitle className="flex items-center text-blue-900">
+                <User className="h-6 w-6 mr-2" />
+                Doctor Profile
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex items-center text-blue-800">
+                    <Stethoscope className="h-4 w-4 mr-2" />
+                    <span className="font-medium">Dr. {profile?.first_name} {profile?.last_name}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Alerts Raised</span>
-                    <span className="font-semibold">0</span>
+                  {profile?.specialization && (
+                    <div className="flex items-center text-blue-700">
+                      <Activity className="h-4 w-4 mr-2" />
+                      <span>Specialization: {profile.specialization}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center text-blue-700">
+                    <Mail className="h-4 w-4 mr-2" />
+                    <span>License: {profile?.license_number}</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Patient Consultations</span>
-                    <span className="font-semibold">0</span>
+                  {profile?.hospital_affiliation && (
+                    <div className="flex items-center text-blue-700">
+                      <Hospital className="h-4 w-4 mr-2" />
+                      <span>{profile.hospital_affiliation}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <Card className="border-l-4 border-l-blue-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <Users className="h-8 w-8 text-blue-600" />
+                  <div className="ml-4">
+                    <p className="text-2xl font-bold text-gray-900">
+                      {doctorStats?.stats.total_patients || 0}
+                    </p>
+                    <p className="text-gray-600">Patients Treated</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Tips</CardTitle>
-                <CardDescription>
-                  Best practices for using the system
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      Always request patient access before attempting to view medical records
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <FileText className="h-8 w-8 text-green-600" />
+                  <div className="ml-4">
+                    <p className="text-2xl font-bold text-gray-900">
+                      {doctorStats?.stats.total_records_added || 0}
                     </p>
+                    <p className="text-gray-600">Records Added</p>
                   </div>
-                  <div className="p-3 bg-green-50 rounded-lg">
-                    <p className="text-sm text-green-800">
-                      Upload supporting documents when adding medical records
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-l-4 border-l-red-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                  <div className="ml-4">
+                    <p className="text-2xl font-bold text-gray-900">
+                      {doctorStats?.stats.total_alerts_raised || 0}
                     </p>
-                  </div>
-                  <div className="p-3 bg-red-50 rounded-lg">
-                    <p className="text-sm text-red-800">
-                      Use alerts for critical cases that require immediate admin attention
-                    </p>
+                    <p className="text-gray-600">Alerts Raised</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
 
-        <TabsContent value="patients">
+          {/* Recent Activity */}
           <Card>
             <CardHeader>
-              <CardTitle>Patients with Access</CardTitle>
-              <CardDescription>
-                Patients who have granted you access to their medical records
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No patients yet</h3>
-                <p className="text-gray-600 mb-4">
-                  Search for patients and request access to view them here
-                </p>
-                <Button onClick={() => setShowPatientSearch(true)} className="bg-blue-600 hover:bg-blue-700">
-                  <Search className="h-4 w-4 mr-2" />
-                  Search Patients
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="activity">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
+              <CardTitle className="flex items-center">
+                <TrendingUp className="h-5 w-5 mr-2" />
+                Recent Activity
+              </CardTitle>
               <CardDescription>
                 Your recent patient interactions and activities
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No recent activity</h3>
-                <p className="text-gray-600">
-                  Your recent actions and patient interactions will appear here
-                </p>
+              {doctorStats?.stats.recent_activity.length ? (
+                <div className="space-y-4">
+                  {doctorStats.stats.recent_activity.map((activity, index) => (
+                    <div key={index} className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                      <div className="mt-1">
+                        {getActivityIcon(activity.type)}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {getActivityText(activity)}
+                        </p>
+                        <p className="text-xs text-gray-500 flex items-center mt-1">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {new Date(activity.date).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No recent activity</h3>
+                  <p className="text-gray-600">
+                    Your recent actions and patient interactions will appear here
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="patients">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <Users className="h-5 w-5 mr-2" />
+                    My Patients
+                  </CardTitle>
+                  <CardDescription>
+                    Patients who have granted you access to their records
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowPatientSearch(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <Search className="h-4 w-4 mr-2" />
+                  Find New Patient
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Search Bar */}
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Search patients by name or Medical ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Patient List */}
+              <div className="space-y-4">
+                {filteredPatients.map((patient) => (
+                  <div
+                    key={patient.id}
+                    className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => handleViewPatient(patient)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <User className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-lg">
+                              {patient.first_name} {patient.last_name}
+                            </h3>
+                            <p className="text-sm text-gray-600">Medical ID: {patient.medical_id}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-500">
+                          {patient.date_of_birth && (
+                            <div className="flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              DOB: {new Date(patient.date_of_birth).toLocaleDateString()}
+                            </div>
+                          )}
+                          {patient.gender && (
+                            <div>Gender: {patient.gender}</div>
+                          )}
+                          {patient.blood_type && (
+                            <div>Blood: {patient.blood_type}</div>
+                          )}
+                          <div className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Access: {new Date(patient.access_granted_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">
+                        View Records
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {filteredPatients.length === 0 && (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {searchQuery ? 'No patients found' : 'No patients yet'}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      {searchQuery 
+                        ? 'Try adjusting your search terms'
+                        : 'Search for patients and request access to view them here'
+                      }
+                    </p>
+                    {!searchQuery && (
+                      <Button onClick={() => setShowPatientSearch(true)} className="bg-blue-600 hover:bg-blue-700">
+                        <Search className="h-4 w-4 mr-2" />
+                        Search Patients
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="search">
+          <div className="grid gap-6">
+            {/* Search Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Search className="h-5 w-5 mr-2" />
+                  Search New Patients
+                </CardTitle>
+                <CardDescription>
+                  Find patients by Medical ID to request access to their records
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button onClick={() => setShowPatientSearch(true)} className="bg-blue-600 hover:bg-blue-700">
+                  <Search className="h-4 w-4 mr-2" />
+                  Search by Medical ID
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Access Requests History */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="h-5 w-5 mr-2" />
+                  Access Requests History
+                </CardTitle>
+                <CardDescription>
+                  View all access requests you've made and their status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {accessRequests?.requests.map((request) => (
+                    <div key={request.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-medium">{request.patient_name}</h3>
+                            {getStatusBadge(request.status)}
+                          </div>
+                          {request.reason && (
+                            <p className="text-sm text-gray-600 mb-2">{request.reason}</p>
+                          )}
+                          <div className="flex items-center space-x-4 text-xs text-gray-500">
+                            <span className="flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Requested: {new Date(request.requested_at).toLocaleDateString()}
+                            </span>
+                            {request.responded_at && (
+                              <span className="flex items-center">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                Responded: {new Date(request.responded_at).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {request.status === 'approved' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              const patient = patientRecords?.patients.find(p => p.id === request.patient_id);
+                              if (patient) handleViewPatient(patient);
+                            }}
+                          >
+                            View Records
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {accessRequests?.requests.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No access requests</h3>
+                      <p className="text-gray-600 mb-4">
+                        You haven't made any access requests yet
+                      </p>
+                      <Button onClick={() => setShowPatientSearch(true)} className="bg-blue-600 hover:bg-blue-700">
+                        <Search className="h-4 w-4 mr-2" />
+                        Search Your First Patient
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 
@@ -273,33 +456,16 @@ export function DoctorDashboard() {
         onOpenChange={setShowPatientSearch}
         doctorId={profile?.id || 0}
         onPatientSelect={handlePatientSelect}
-        onAddRecord={handleAddRecord}
-        onCreateAlert={handleCreateAlert}
+        onAddRecord={() => {}}
+        onCreateAlert={() => {}}
       />
 
-      {selectedPatientId && (
-        <>
-          <AddMedicalRecordDialog
-            open={showAddRecord}
-            onOpenChange={setShowAddRecord}
-            patientId={selectedPatientId}
-            doctorId={profile?.id}
-            onSuccess={() => {
-              setShowAddRecord(false);
-            }}
-          />
-
-          <CreateAlertDialog
-            open={showCreateAlert}
-            onOpenChange={setShowCreateAlert}
-            patientId={selectedPatientId}
-            doctorId={profile?.id || 0}
-            onSuccess={() => {
-              setShowCreateAlert(false);
-            }}
-          />
-        </>
-      )}
+      <PatientRecordView
+        open={showPatientRecord}
+        onOpenChange={setShowPatientRecord}
+        patient={selectedPatient}
+        doctorId={profile?.id || 0}
+      />
     </div>
   );
 }

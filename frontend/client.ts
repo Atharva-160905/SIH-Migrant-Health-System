@@ -86,10 +86,13 @@ export interface ClientOptions {
  */
 import { addMedicalRecord as api_health_add_medical_record_addMedicalRecord } from "~backend/health/add_medical_record";
 import { createAlert as api_health_create_alert_createAlert } from "~backend/health/create_alert";
+import { getDoctorStats as api_health_get_doctor_stats_getDoctorStats } from "~backend/health/get_doctor_stats";
 import { getPatientDetails as api_health_get_patient_details_getPatientDetails } from "~backend/health/get_patient_details";
 import { listAccessRequests as api_health_list_access_requests_listAccessRequests } from "~backend/health/list_access_requests";
+import { listAccessRequestsByDoctor as api_health_list_access_requests_by_doctor_listAccessRequestsByDoctor } from "~backend/health/list_access_requests_by_doctor";
 import { listAlerts as api_health_list_alerts_listAlerts } from "~backend/health/list_alerts";
 import { listMedicalRecords as api_health_list_medical_records_listMedicalRecords } from "~backend/health/list_medical_records";
+import { listPatientRecords as api_health_list_patient_records_listPatientRecords } from "~backend/health/list_patient_records";
 import { login as api_health_login_login } from "~backend/health/login";
 import { registerAdmin as api_health_register_admin_registerAdmin } from "~backend/health/register_admin";
 import { registerDoctor as api_health_register_doctor_registerDoctor } from "~backend/health/register_doctor";
@@ -108,10 +111,13 @@ export namespace health {
             this.baseClient = baseClient
             this.addMedicalRecord = this.addMedicalRecord.bind(this)
             this.createAlert = this.createAlert.bind(this)
+            this.getDoctorStats = this.getDoctorStats.bind(this)
             this.getPatientDetails = this.getPatientDetails.bind(this)
             this.listAccessRequests = this.listAccessRequests.bind(this)
+            this.listAccessRequestsByDoctor = this.listAccessRequestsByDoctor.bind(this)
             this.listAlerts = this.listAlerts.bind(this)
             this.listMedicalRecords = this.listMedicalRecords.bind(this)
+            this.listPatientRecords = this.listPatientRecords.bind(this)
             this.login = this.login.bind(this)
             this.registerAdmin = this.registerAdmin.bind(this)
             this.registerDoctor = this.registerDoctor.bind(this)
@@ -141,6 +147,15 @@ export namespace health {
         }
 
         /**
+         * Gets statistics and recent activity for a doctor.
+         */
+        public async getDoctorStats(params: { doctor_id: number }): Promise<ResponseType<typeof api_health_get_doctor_stats_getDoctorStats>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/doctors/${encodeURIComponent(params.doctor_id)}/stats`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_health_get_doctor_stats_getDoctorStats>
+        }
+
+        /**
          * Gets detailed patient information for a doctor.
          */
         public async getPatientDetails(params: RequestType<typeof api_health_get_patient_details_getPatientDetails>): Promise<ResponseType<typeof api_health_get_patient_details_getPatientDetails>> {
@@ -164,6 +179,15 @@ export namespace health {
         }
 
         /**
+         * Lists all access requests made by a doctor.
+         */
+        public async listAccessRequestsByDoctor(params: { doctor_id: number }): Promise<ResponseType<typeof api_health_list_access_requests_by_doctor_listAccessRequestsByDoctor>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/doctors/${encodeURIComponent(params.doctor_id)}/access-requests`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_health_list_access_requests_by_doctor_listAccessRequestsByDoctor>
+        }
+
+        /**
          * Lists all alerts for admin review.
          */
         public async listAlerts(): Promise<ResponseType<typeof api_health_list_alerts_listAlerts>> {
@@ -179,6 +203,15 @@ export namespace health {
             // Now make the actual call to the API
             const resp = await this.baseClient.callTypedAPI(`/patients/${encodeURIComponent(params.patient_id)}/medical-records`, {method: "GET", body: undefined})
             return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_health_list_medical_records_listMedicalRecords>
+        }
+
+        /**
+         * Lists all patients who have granted access to a doctor.
+         */
+        public async listPatientRecords(params: { doctor_id: number }): Promise<ResponseType<typeof api_health_list_patient_records_listPatientRecords>> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI(`/doctors/${encodeURIComponent(params.doctor_id)}/patients`, {method: "GET", body: undefined})
+            return JSON.parse(await resp.text(), dateReviver) as ResponseType<typeof api_health_list_patient_records_listPatientRecords>
         }
 
         /**
