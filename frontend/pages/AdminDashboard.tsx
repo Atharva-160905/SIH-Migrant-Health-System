@@ -6,11 +6,13 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertTriangle, Users, Activity, TrendingUp } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import { AlertDetailsDialog } from '../components/AlertDetailsDialog';
 import backend from '~backend/client';
 
 export function AdminDashboard() {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [selectedAlert, setSelectedAlert] = useState<any>(null);
   const [showAlertDetails, setShowAlertDetails] = useState(false);
 
@@ -49,7 +51,7 @@ export function AdminDashboard() {
       high: "secondary",
       critical: "destructive",
     };
-    return <Badge variant={variants[severity]}>{severity}</Badge>;
+    return <Badge variant={variants[severity]}>{t(severity)}</Badge>;
   };
 
   const getStatusBadge = (status: string) => {
@@ -68,7 +70,7 @@ export function AdminDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('admin')} {t('dashboard')}</h1>
         <p className="mt-2 text-gray-600">
           Monitor system activity and manage alerts
         </p>
@@ -78,7 +80,7 @@ export function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Critical Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('critical')} {t('alerts')}</CardTitle>
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -89,7 +91,7 @@ export function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium">Open {t('alerts')}</CardTitle>
             <Activity className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
@@ -111,7 +113,7 @@ export function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium">Total {t('alerts')}</CardTitle>
             <Users className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
@@ -123,7 +125,7 @@ export function AdminDashboard() {
 
       <Tabs defaultValue="alerts" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="alerts">Alerts</TabsTrigger>
+          <TabsTrigger value="alerts">{t('alerts')}</TabsTrigger>
           <TabsTrigger value="system">System Monitoring</TabsTrigger>
         </TabsList>
 
@@ -132,7 +134,7 @@ export function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <AlertTriangle className="h-5 w-5 mr-2" />
-                Alert Management
+                {t('alerts')} Management
               </CardTitle>
               <CardDescription>
                 Review and respond to alerts raised by doctors
@@ -151,8 +153,8 @@ export function AdminDashboard() {
                         <h3 className="font-medium">{alert.title}</h3>
                         <p className="text-sm text-gray-600 mt-1">{alert.description}</p>
                         <div className="text-xs text-gray-500 mt-2">
-                          <div>Patient: {alert.patient_name}</div>
-                          <div>Doctor: {alert.doctor_name}</div>
+                          <div>{t('patient')}: {alert.patient_name}</div>
+                          <div>{t('doctor')}: {alert.doctor_name}</div>
                           <div>Created: {new Date(alert.created_at).toLocaleString()}</div>
                         </div>
                       </div>

@@ -15,11 +15,14 @@ import {
   Phone,
   MapPin,
   Heart,
-  Shield
+  Shield,
+  Eye
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import { AddMedicalRecordDialog } from './AddMedicalRecordDialog';
 import { CreateAlertDialog } from './CreateAlertDialog';
+import { DocumentViewer } from './DocumentViewer';
 import backend from '~backend/client';
 
 interface Patient {
@@ -54,13 +57,21 @@ export function PatientRecordView({
 }: PatientRecordViewProps) {
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [showCreateAlert, setShowCreateAlert] = useState(false);
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const { data: medicalRecords, refetch: refetchRecords } = useQuery({
     queryKey: ['medical-records', patient?.id],
     queryFn: () => patient?.id ? backend.health.listMedicalRecords({ patient_id: patient.id }) : null,
     enabled: !!patient?.id && open,
   });
+
+  const handleViewDocument = (record: any) => {
+    setSelectedRecord(record);
+    setShowDocumentViewer(true);
+  };
 
   const handleDownloadFile = async (fileName: string, fileUrl?: string) => {
     if (!fileUrl) {
@@ -97,7 +108,7 @@ export function PatientRecordView({
     
     return (
       <Badge variant="outline" className={colors[type] || colors.other}>
-        {type.replace('_', ' ')}
+        {t(type.replace('_', ''))}
       </Badge>
     );
   };
@@ -122,14 +133,14 @@ export function PatientRecordView({
               {patient.first_name} {patient.last_name}
             </DialogTitle>
             <DialogDescription>
-              Medical ID: {patient.medical_id} • Access granted on {new Date(patient.access_granted_at).toLocaleDateString()}
+              {t('medicalId')}: {patient.medical_id} • Access granted on {new Date(patient.access_granted_at).toLocaleDateString()}
             </DialogDescription>
           </DialogHeader>
 
           <Tabs defaultValue="overview" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="overview">Patient Overview</TabsTrigger>
-              <TabsTrigger value="records">Medical Records</TabsTrigger>
+              <TabsTrigger value="overview">{t('patient')} Overview</TabsTrigger>
+              <TabsTrigger value="records">{t('medicalRecords')}</TabsTrigger>
               <TabsTrigger value="actions">Actions</TabsTrigger>
             </TabsList>
 
@@ -139,7 +150,7 @@ export function PatientRecordView({
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <User className="h-5 w-5 mr-2" />
-                      Personal Information
+                      {t('personalInfo')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -173,7 +184,7 @@ export function PatientRecordView({
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Phone className="h-5 w-5 mr-2" />
-                      Emergency Contact
+                      {t('emergencyContact')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -206,18 +217,18 @@ export function PatientRecordView({
                   <CardHeader>
                     <CardTitle className="flex items-center">
                       <Shield className="h-5 w-5 mr-2" />
-                      Medical Information
+                      {t('medicalInfo')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="text-sm">
-                      <span className="font-medium text-gray-600">Allergies:</span>
+                      <span className="font-medium text-gray-600">{t('allergies')}:</span>
                       <p className="mt-1 p-2 bg-red-50 rounded border border-red-200">
                         {patient.allergies || 'No known allergies'}
                       </p>
                     </div>
                     <div className="text-sm">
-                      <span className="font-medium text-gray-600">Medical Conditions:</span>
+                      <span className="font-medium text-gray-600">{t('medicalConditions')}:</span>
                       <p className="mt-1 p-2 bg-yellow-50 rounded border border-yellow-200">
                         {patient.medical_conditions || 'No known conditions'}
                       </p>
@@ -234,7 +245,7 @@ export function PatientRecordView({
                     <div>
                       <CardTitle className="flex items-center">
                         <FileText className="h-5 w-5 mr-2" />
-                        Medical Records
+                        {t('medicalRecords')}
                       </CardTitle>
                       <CardDescription>
                         View all medical records for this patient
@@ -242,7 +253,7 @@ export function PatientRecordView({
                     </div>
                     <Button onClick={() => setShowAddRecord(true)} className="bg-blue-600 hover:bg-blue-700">
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Record
+                      {t('addRecord')}
                     </Button>
                   </div>
                 </CardHeader>
@@ -275,17 +286,28 @@ export function PatientRecordView({
                               )}
                             </div>
                           </div>
-                          {record.file_url && (
+                          <div className="flex space-x-2">
+                            {record.file_url && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDownloadFile(record.file_name || '', record.file_url)}
+                                className="flex items-center"
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                {t('download')}
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => handleDownloadFile(record.file_name || '', record.file_url)}
-                              className="flex items-center"
+                              variant="ghost"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => handleViewDocument(record)}
                             >
-                              <Download className="h-3 w-3 mr-1" />
-                              Download
+                              <Eye className="h-3 w-3 mr-1" />
+                              {t('view')}
                             </Button>
-                          )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -314,7 +336,7 @@ export function PatientRecordView({
                     <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                       <FileText className="h-8 w-8 text-blue-600" />
                     </div>
-                    <CardTitle className="text-xl">Add Medical Record</CardTitle>
+                    <CardTitle className="text-xl">{t('addMedicalRecord')}</CardTitle>
                     <CardDescription>
                       Upload new medical documents, prescriptions, or test results
                     </CardDescription>
@@ -322,7 +344,7 @@ export function PatientRecordView({
                   <CardContent>
                     <Button onClick={() => setShowAddRecord(true)} className="w-full bg-blue-600 hover:bg-blue-700">
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Record
+                      {t('addRecord')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -332,7 +354,7 @@ export function PatientRecordView({
                     <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
                       <AlertTriangle className="h-8 w-8 text-red-600" />
                     </div>
-                    <CardTitle className="text-xl">Create Alert</CardTitle>
+                    <CardTitle className="text-xl">{t('createAlert')}</CardTitle>
                     <CardDescription>
                       Raise critical alerts to admin for emergency cases
                     </CardDescription>
@@ -343,7 +365,7 @@ export function PatientRecordView({
                       className="w-full bg-red-600 hover:bg-red-700"
                     >
                       <AlertTriangle className="h-4 w-4 mr-2" />
-                      Create Alert
+                      {t('createAlert')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -372,6 +394,12 @@ export function PatientRecordView({
         onSuccess={() => {
           setShowCreateAlert(false);
         }}
+      />
+
+      <DocumentViewer
+        open={showDocumentViewer}
+        onOpenChange={setShowDocumentViewer}
+        record={selectedRecord}
       />
     </>
   );

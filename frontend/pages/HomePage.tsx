@@ -14,8 +14,12 @@ import {
   UserCheck,
   Database
 } from 'lucide-react';
+import { LanguageToggle } from '../components/LanguageToggle';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export function HomePage() {
+  const { t } = useLanguage();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Navigation */}
@@ -24,7 +28,7 @@ export function HomePage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <Heart className="h-8 w-8 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">HealthRecord</span>
+              <span className="text-xl font-bold text-gray-900">{t('appName')}</span>
             </div>
             
             <div className="hidden md:flex items-center space-x-8">
@@ -35,11 +39,12 @@ export function HomePage() {
             </div>
 
             <div className="flex items-center space-x-4">
+              <LanguageToggle />
               <Link to="/login">
-                <Button variant="ghost" className="text-gray-600">Login</Button>
+                <Button variant="ghost" className="text-gray-600">{t('login')}</Button>
               </Link>
               <Link to="/register">
-                <Button className="bg-blue-600 hover:bg-blue-700">Sign Up</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700">{t('register')}</Button>
               </Link>
             </div>
           </div>
@@ -67,7 +72,7 @@ export function HomePage() {
               </Link>
               <Link to="/login">
                 <Button size="lg" variant="outline" className="text-lg px-8 py-3">
-                  Sign In
+                  {t('login')}
                 </Button>
               </Link>
             </div>
@@ -79,7 +84,7 @@ export function HomePage() {
       <section id="about" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">About HealthRecord</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">About {t('appName')}</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               A comprehensive digital health record system designed to empower patients, 
               support healthcare providers, and ensure seamless medical care continuity.
@@ -263,15 +268,13 @@ export function HomePage() {
               Contact us for assistance or questions.
             </p>
             <Button 
-  size="lg" 
-  variant="outline" 
-  className="border-2 border-white text-white px-6 py-3 rounded-lg transition duration-300 
-             bg-gray-900 hover:bg-white hover:text-gray-900 shadow-md"
->
-  Contact Support
-</Button>
-
-
+              size="lg" 
+              variant="outline" 
+              className="border-2 border-white text-white px-6 py-3 rounded-lg transition duration-300 
+                         bg-gray-900 hover:bg-white hover:text-gray-900 shadow-md"
+            >
+              Contact Support
+            </Button>
           </div>
         </div>
       </section>
@@ -282,10 +285,10 @@ export function HomePage() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <Heart className="h-6 w-6 text-blue-400" />
-              <span className="text-xl font-bold">HealthRecord</span>
+              <span className="text-xl font-bold">{t('appName')}</span>
             </div>
             <div className="text-gray-400 text-center md:text-right">
-              <p>&copy; 2024 HealthRecord. All rights reserved.</p>
+              <p>&copy; 2024 {t('appName')}. All rights reserved.</p>
               <p className="mt-1">Secure digital health records for everyone.</p>
             </div>
           </div>

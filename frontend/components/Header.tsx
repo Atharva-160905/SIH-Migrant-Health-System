@@ -1,9 +1,12 @@
 import { LogOut, User, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LanguageToggle } from './LanguageToggle';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export function Header() {
   const { user, profile, logout } = useAuth();
+  const { t } = useLanguage();
 
   const getDisplayName = () => {
     if (profile?.first_name && profile?.last_name) {
@@ -14,9 +17,9 @@ export function Header() {
 
   const getRoleDisplay = () => {
     const roleMap = {
-      patient: 'Patient',
-      doctor: 'Doctor',
-      admin: 'Administrator'
+      patient: t('patient'),
+      doctor: t('doctor'),
+      admin: t('admin')
     };
     return roleMap[user?.role as keyof typeof roleMap] || '';
   };
@@ -28,12 +31,14 @@ export function Header() {
           <div className="flex items-center space-x-3">
             <Heart className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900">HealthRecord</h1>
-              <p className="text-xs text-gray-500">Digital Health Record System</p>
+              <h1 className="text-xl font-bold text-gray-900">{t('appName')}</h1>
+              <p className="text-xs text-gray-500">{t('appDescription')}</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
+            <LanguageToggle />
+            
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                 <User className="h-5 w-5 text-blue-600" />
@@ -51,7 +56,7 @@ export function Header() {
               className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
             >
               <LogOut className="h-4 w-4 mr-2" />
-              Sign Out
+              {t('logout')}
             </Button>
           </div>
         </div>

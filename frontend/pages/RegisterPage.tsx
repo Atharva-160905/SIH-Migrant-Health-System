@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { Heart, ArrowLeft, UserPlus } from 'lucide-react';
+import { LanguageToggle } from '../components/LanguageToggle';
+import { useLanguage } from '../contexts/LanguageContext';
 import backend from '~backend/client';
 
 export function RegisterPage() {
@@ -34,6 +36,7 @@ export function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -100,7 +103,7 @@ export function RegisterPage() {
 
       toast({
         title: "Account created successfully!",
-        description: "Welcome to HealthRecord. You can now sign in with your credentials.",
+        description: `Welcome to ${t('appName')}. You can now sign in with your credentials.`,
       });
       navigate('/login');
     } catch (error: any) {
@@ -120,21 +123,24 @@ export function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl w-full space-y-8">
           <div className="text-center">
-            <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-500 mb-6">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Link>
+            <div className="flex justify-between items-center mb-6">
+              <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-500">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Link>
+              <LanguageToggle />
+            </div>
             <div className="flex justify-center">
               <div className="flex items-center space-x-2">
                 <Heart className="h-10 w-10 text-blue-600" />
-                <span className="text-2xl font-bold text-gray-900">HealthRecord</span>
+                <span className="text-2xl font-bold text-gray-900">{t('appName')}</span>
               </div>
             </div>
             <h2 className="mt-6 text-3xl font-bold text-gray-900">
               Create your account
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              Join HealthRecord to manage your digital health records
+              Join {t('appName')} to manage your digital health records
             </p>
           </div>
 
@@ -142,7 +148,7 @@ export function RegisterPage() {
             <CardHeader>
               <CardTitle className="flex items-center justify-center text-2xl">
                 <UserPlus className="h-6 w-6 mr-2" />
-                Register
+                {t('register')}
               </CardTitle>
               <CardDescription className="text-center">
                 Choose your role and fill in the required information
@@ -158,9 +164,9 @@ export function RegisterPage() {
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="patient">Patient - Manage my health records</SelectItem>
-                      <SelectItem value="doctor">Doctor - Access patient records</SelectItem>
-                      <SelectItem value="admin">Admin - System administration</SelectItem>
+                      <SelectItem value="patient">{t('patient')} - Manage my health records</SelectItem>
+                      <SelectItem value="doctor">{t('doctor')} - Access patient records</SelectItem>
+                      <SelectItem value="admin">{t('admin')} - System administration</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -6,16 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { QrCode, FileText, Users, Plus, Download, Eye } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '@/components/ui/use-toast';
 import { AddMedicalRecordDialog } from '../components/AddMedicalRecordDialog';
 import { AccessRequestDialog } from '../components/AccessRequestDialog';
+import { DocumentViewer } from '../components/DocumentViewer';
 import backend from '~backend/client';
 
 export function PatientDashboard() {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [showAddRecord, setShowAddRecord] = useState(false);
   const [showAccessRequests, setShowAccessRequests] = useState(false);
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
   const { data: medicalRecords, refetch: refetchRecords } = useQuery({
     queryKey: ['medical-records', profile?.id],
@@ -47,6 +52,11 @@ export function PatientDashboard() {
     }
   };
 
+  const handleViewDocument = (record: any) => {
+    setSelectedRecord(record);
+    setShowDocumentViewer(true);
+  };
+
   const handleDownloadFile = async (fileName: string, fileUrl?: string) => {
     if (!fileUrl) {
       toast({
@@ -58,7 +68,6 @@ export function PatientDashboard() {
     }
 
     try {
-      // Use the file path directly (it's already stored as the file path, not a signed URL)
       const response = await backend.storage.downloadFile({ file_path: fileUrl });
       window.open(response.download_url, '_blank');
     } catch (error: any) {
@@ -77,7 +86,7 @@ export function PatientDashboard() {
       approved: "default",
       denied: "destructive",
     };
-    return <Badge variant={variants[status]}>{status}</Badge>;
+    return <Badge variant={variants[status]}>{t(status)}</Badge>;
   };
 
   const getRecordTypeBadge = (type: string) => {
@@ -92,7 +101,7 @@ export function PatientDashboard() {
     
     return (
       <Badge variant="outline" className={colors[type] || colors.other}>
-        {type.replace('_', ' ')}
+        {t(type.replace('_', ''))}
       </Badge>
     );
   };
@@ -110,9 +119,9 @@ export function PatientDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Patient Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('patient')} {t('dashboard')}</h1>
         <p className="mt-2 text-gray-600">
-          Welcome back, {profile?.first_name} {profile?.last_name}
+          {t('welcomeBack')}, {profile?.first_name} {profile?.last_name}
         </p>
       </div>
 
@@ -126,7 +135,7 @@ export function PatientDashboard() {
                 <p className="text-2xl font-bold text-gray-900">
                   {medicalRecords?.records.length || 0}
                 </p>
-                <p className="text-gray-600">Medical Records</p>
+                <p className="text-gray-600">{t('medicalRecords')}</p>
               </div>
             </div>
           </CardContent>
@@ -140,7 +149,7 @@ export function PatientDashboard() {
                 <p className="text-2xl font-bold text-gray-900">
                   {accessRequests?.requests.filter(r => r.status === 'approved').length || 0}
                 </p>
-                <p className="text-gray-600">Approved Access</p>
+                <p className="text-gray-600">{t('accessGranted')}</p>
               </div>
             </div>
           </CardContent>
@@ -154,7 +163,7 @@ export function PatientDashboard() {
                 <p className="text-2xl font-bold text-gray-900">
                   {pendingRequests.length}
                 </p>
-                <p className="text-gray-600">Pending Requests</p>
+                <p className="text-gray-600">{t('pendingRequests')}</p>
               </div>
             </div>
           </CardContent>
@@ -166,7 +175,7 @@ export function PatientDashboard() {
         <CardHeader>
           <CardTitle className="flex items-center text-blue-900">
             <QrCode className="h-5 w-5 mr-2" />
-            Your Medical ID
+            Your {t('medicalId')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -189,9 +198,9 @@ export function PatientDashboard() {
 
       <Tabs defaultValue="records" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="records">Medical Records</TabsTrigger>
+          <TabsTrigger value="records">{t('medicalRecords')}</TabsTrigger>
           <TabsTrigger value="access">
-            Access Requests
+            {t('accessRequests')}
             {pendingRequests.length > 0 && (
               <Badge variant="destructive" className="ml-2 text-xs">
                 {pendingRequests.length}
@@ -207,7 +216,7 @@ export function PatientDashboard() {
                 <div>
                   <CardTitle className="flex items-center">
                     <FileText className="h-5 w-5 mr-2" />
-                    Medical Records
+                    {t('medicalRecords')}
                   </CardTitle>
                   <CardDescription>
                     View and manage your medical records and documents
@@ -215,7 +224,7 @@ export function PatientDashboard() {
                 </div>
                 <Button onClick={() => setShowAddRecord(true)} className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Record
+                  {t('addRecord')}
                 </Button>
               </div>
             </CardHeader>
@@ -256,16 +265,17 @@ export function PatientDashboard() {
                             className="flex items-center"
                           >
                             <Download className="h-3 w-3 mr-1" />
-                            Download
+                            {t('download')}
                           </Button>
                         )}
                         <Button
                           size="sm"
                           variant="ghost"
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={() => handleViewDocument(record)}
                         >
                           <Eye className="h-3 w-3 mr-1" />
-                          View
+                          {t('view')}
                         </Button>
                       </div>
                     </div>
@@ -274,13 +284,13 @@ export function PatientDashboard() {
                 {medicalRecords?.records.length === 0 && (
                   <div className="text-center py-12">
                     <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No medical records</h3>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">{t('noRecords')}</h3>
                     <p className="text-gray-600 mb-4">
                       Get started by adding your first medical record
                     </p>
                     <Button onClick={() => setShowAddRecord(true)} className="bg-blue-600 hover:bg-blue-700">
                       <Plus className="h-4 w-4 mr-2" />
-                      Add First Record
+                      {t('firstRecord')}
                     </Button>
                   </div>
                 )}
@@ -296,7 +306,7 @@ export function PatientDashboard() {
                 <div>
                   <CardTitle className="flex items-center">
                     <Users className="h-5 w-5 mr-2" />
-                    Access Requests
+                    {t('accessRequests')}
                   </CardTitle>
                   <CardDescription>
                     Manage doctor access requests to your medical records
@@ -328,7 +338,7 @@ export function PatientDashboard() {
                           onClick={() => handleRespondToRequest(request.id, 'approved')}
                           className="bg-green-600 hover:bg-green-700"
                         >
-                          Approve
+                          {t('approveAccess')}
                         </Button>
                         <Button
                           size="sm"
@@ -336,7 +346,7 @@ export function PatientDashboard() {
                           onClick={() => handleRespondToRequest(request.id, 'denied')}
                           className="text-red-600 border-red-300 hover:bg-red-50"
                         >
-                          Deny
+                          {t('denyAccess')}
                         </Button>
                       </div>
                     </div>
@@ -371,6 +381,12 @@ export function PatientDashboard() {
         onOpenChange={setShowAccessRequests}
         requests={accessRequests?.requests || []}
         onRespond={handleRespondToRequest}
+      />
+
+      <DocumentViewer
+        open={showDocumentViewer}
+        onOpenChange={setShowDocumentViewer}
+        record={selectedRecord}
       />
     </div>
   );

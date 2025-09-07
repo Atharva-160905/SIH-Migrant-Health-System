@@ -21,6 +21,7 @@ import {
   Hospital
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useToast } from '@/components/ui/use-toast';
 import { PatientSearchDialog } from '../components/PatientSearchDialog';
 import { PatientRecordView } from '../components/PatientRecordView';
@@ -28,6 +29,7 @@ import backend from '~backend/client';
 
 export function DoctorDashboard() {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const { toast } = useToast();
   const [showPatientSearch, setShowPatientSearch] = useState(false);
   const [showPatientRecord, setShowPatientRecord] = useState(false);
@@ -81,7 +83,7 @@ export function DoctorDashboard() {
       approved: "default",
       denied: "destructive",
     };
-    return <Badge variant={variants[status]}>{status}</Badge>;
+    return <Badge variant={variants[status]}>{t(status)}</Badge>;
   };
 
   const getActivityIcon = (type: string) => {
@@ -113,17 +115,17 @@ export function DoctorDashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Doctor Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{t('doctor')} {t('dashboard')}</h1>
         <p className="mt-2 text-gray-600">
-          Welcome back, Dr. {profile?.first_name} {profile?.last_name}
+          {t('welcomeBack')}, Dr. {profile?.first_name} {profile?.last_name}
         </p>
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="patients">Patient Records</TabsTrigger>
-          <TabsTrigger value="search">Search Patients</TabsTrigger>
+          <TabsTrigger value="dashboard">{t('dashboard')}</TabsTrigger>
+          <TabsTrigger value="patients">{t('patients')} {t('records')}</TabsTrigger>
+          <TabsTrigger value="search">{t('search')} {t('patients')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -132,7 +134,7 @@ export function DoctorDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center text-blue-900">
                 <User className="h-6 w-6 mr-2" />
-                Doctor Profile
+                {t('doctor')} {t('profile')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -175,7 +177,7 @@ export function DoctorDashboard() {
                     <p className="text-2xl font-bold text-gray-900">
                       {doctorStats?.stats.total_patients || 0}
                     </p>
-                    <p className="text-gray-600">Patients Treated</p>
+                    <p className="text-gray-600">{t('totalPatients')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -189,7 +191,7 @@ export function DoctorDashboard() {
                     <p className="text-2xl font-bold text-gray-900">
                       {doctorStats?.stats.total_records_added || 0}
                     </p>
-                    <p className="text-gray-600">Records Added</p>
+                    <p className="text-gray-600">{t('totalRecords')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -203,7 +205,7 @@ export function DoctorDashboard() {
                     <p className="text-2xl font-bold text-gray-900">
                       {doctorStats?.stats.total_alerts_raised || 0}
                     </p>
-                    <p className="text-gray-600">Alerts Raised</p>
+                    <p className="text-gray-600">{t('totalAlerts')}</p>
                   </div>
                 </div>
               </CardContent>
@@ -215,7 +217,7 @@ export function DoctorDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <TrendingUp className="h-5 w-5 mr-2" />
-                Recent Activity
+                {t('recentActivity')}
               </CardTitle>
               <CardDescription>
                 Your recent patient interactions and activities
@@ -261,7 +263,7 @@ export function DoctorDashboard() {
                 <div>
                   <CardTitle className="flex items-center">
                     <Users className="h-5 w-5 mr-2" />
-                    My Patients
+                    My {t('patients')}
                   </CardTitle>
                   <CardDescription>
                     Patients who have granted you access to their records
@@ -279,7 +281,7 @@ export function DoctorDashboard() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search patients by name or Medical ID..."
+                    placeholder={`${t('search')} patients by name or Medical ID...`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -305,7 +307,7 @@ export function DoctorDashboard() {
                             <h3 className="font-medium text-lg">
                               {patient.first_name} {patient.last_name}
                             </h3>
-                            <p className="text-sm text-gray-600">Medical ID: {patient.medical_id}</p>
+                            <p className="text-sm text-gray-600">{t('medicalId')}: {patient.medical_id}</p>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-500">
@@ -328,7 +330,7 @@ export function DoctorDashboard() {
                         </div>
                       </div>
                       <Button size="sm" variant="outline">
-                        View Records
+                        {t('view')} {t('records')}
                       </Button>
                     </div>
                   </div>
@@ -348,7 +350,7 @@ export function DoctorDashboard() {
                     {!searchQuery && (
                       <Button onClick={() => setShowPatientSearch(true)} className="bg-blue-600 hover:bg-blue-700">
                         <Search className="h-4 w-4 mr-2" />
-                        Search Patients
+                        {t('search')} {t('patients')}
                       </Button>
                     )}
                   </div>
@@ -365,7 +367,7 @@ export function DoctorDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Search className="h-5 w-5 mr-2" />
-                  Search New Patients
+                  {t('search')} New {t('patients')}
                 </CardTitle>
                 <CardDescription>
                   Find patients by Medical ID to request access to their records
@@ -374,7 +376,7 @@ export function DoctorDashboard() {
               <CardContent>
                 <Button onClick={() => setShowPatientSearch(true)} className="bg-blue-600 hover:bg-blue-700">
                   <Search className="h-4 w-4 mr-2" />
-                  Search by Medical ID
+                  {t('search')} by {t('medicalId')}
                 </Button>
               </CardContent>
             </Card>
@@ -384,7 +386,7 @@ export function DoctorDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Users className="h-5 w-5 mr-2" />
-                  Access Requests History
+                  {t('accessRequests')} History
                 </CardTitle>
                 <CardDescription>
                   View all access requests you've made and their status
@@ -425,7 +427,7 @@ export function DoctorDashboard() {
                               if (patient) handleViewPatient(patient);
                             }}
                           >
-                            View Records
+                            {t('view')} {t('records')}
                           </Button>
                         )}
                       </div>
@@ -440,7 +442,7 @@ export function DoctorDashboard() {
                       </p>
                       <Button onClick={() => setShowPatientSearch(true)} className="bg-blue-600 hover:bg-blue-700">
                         <Search className="h-4 w-4 mr-2" />
-                        Search Your First Patient
+                        {t('search')} Your First {t('patient')}
                       </Button>
                     </div>
                   )}

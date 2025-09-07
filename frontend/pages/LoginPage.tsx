@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Heart, ArrowLeft } from 'lucide-react';
+import { LanguageToggle } from '../components/LanguageToggle';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,6 +16,7 @@ export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,18 +45,21 @@ export function LoginPage() {
       <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
-            <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-500 mb-6">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Link>
+            <div className="flex justify-between items-center mb-6">
+              <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-500">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Home
+              </Link>
+              <LanguageToggle />
+            </div>
             <div className="flex justify-center">
               <div className="flex items-center space-x-2">
                 <Heart className="h-10 w-10 text-blue-600" />
-                <span className="text-2xl font-bold text-gray-900">HealthRecord</span>
+                <span className="text-2xl font-bold text-gray-900">{t('appName')}</span>
               </div>
             </div>
             <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              Welcome back
+              {t('welcomeBack')}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               Sign in to access your health records
@@ -62,7 +68,7 @@ export function LoginPage() {
 
           <Card className="shadow-xl border-0">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl text-center">Sign In</CardTitle>
+              <CardTitle className="text-2xl text-center">{t('login')}</CardTitle>
               <CardDescription className="text-center">
                 Enter your email and password to access your account
               </CardDescription>
@@ -107,7 +113,7 @@ export function LoginPage() {
                       Signing in...
                     </div>
                   ) : (
-                    'Sign In'
+                    t('login')
                   )}
                 </Button>
               </form>
