@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import backend from '~backend/client';
 
 interface CreateAlertDialogProps {
@@ -30,6 +31,7 @@ export function CreateAlertDialog({
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,8 +47,8 @@ export function CreateAlertDialog({
       });
 
       toast({
-        title: "Alert created",
-        description: "Alert has been sent to admin successfully",
+        title: t('language') === 'hi' ? 'अलर्ट बनाया गया' : 'Alert created',
+        description: t('alertCreated'),
       });
 
       setFormData({
@@ -59,8 +61,8 @@ export function CreateAlertDialog({
     } catch (error: any) {
       console.error('Error creating alert:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to create alert",
+        title: t('error'),
+        description: error.message || (t('language') === 'hi' ? 'अलर्ट बनाने में असफल' : 'Failed to create alert'),
         variant: "destructive",
       });
     } finally {
@@ -72,60 +74,63 @@ export function CreateAlertDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Create Alert</DialogTitle>
+          <DialogTitle>{t('createAlert')}</DialogTitle>
           <DialogDescription>
-            Raise an alert to admin for emergency or critical cases
+            {t('language') === 'hi' 
+              ? 'आपातकालीन या गंभीर मामलों के लिए प्रशासक को अलर्ट भेजें'
+              : 'Raise an alert to admin for emergency or critical cases'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="severity">Severity *</Label>
+            <Label htmlFor="severity">{t('alertSeverity')} *</Label>
             <Select
               value={formData.severity}
               onValueChange={(value: any) => setFormData(prev => ({ ...prev, severity: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select severity level" />
+                <SelectValue placeholder={t('language') === 'hi' ? 'गंभीरता स्तर चुनें' : 'Select severity level'} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="low">{t('low')}</SelectItem>
+                <SelectItem value="medium">{t('medium')}</SelectItem>
+                <SelectItem value="high">{t('high')}</SelectItem>
+                <SelectItem value="critical">{t('critical')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title">{t('alertTitle')} *</Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required
-              placeholder="Enter alert title"
+              placeholder={t('language') === 'hi' ? 'अलर्ट शीर्षक दर्ज करें' : 'Enter alert title'}
             />
           </div>
 
           <div>
-            <Label htmlFor="description">Description *</Label>
+            <Label htmlFor="description">{t('alertDescription')} *</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               required
-              placeholder="Describe the situation or emergency"
+              placeholder={t('language') === 'hi' ? 'स्थिति या आपातकाल का वर्णन करें' : 'Describe the situation or emergency'}
               rows={4}
             />
           </div>
 
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={isLoading} variant="destructive">
-              {isLoading ? 'Creating...' : 'Create Alert'}
+              {isLoading ? t('creating') : t('createAlert')}
             </Button>
           </div>
         </form>

@@ -32,8 +32,10 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
   const handleDownload = async () => {
     if (!record?.file_url) {
       toast({
-        title: "No file attached",
-        description: "This record doesn't have an attached file",
+        title: t('language') === 'hi' ? 'कोई फाइल संलग्न नहीं' : 'No file attached',
+        description: t('language') === 'hi' 
+          ? 'इस रिकॉर्ड में कोई संलग्न फाइल नहीं है'
+          : "This record doesn't have an attached file",
         variant: "destructive",
       });
       return;
@@ -46,8 +48,8 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
     } catch (error: any) {
       console.error('Download error:', error);
       toast({
-        title: "Download failed",
-        description: error.message || "Failed to download file",
+        title: t('downloadFailed'),
+        description: error.message || (t('language') === 'hi' ? 'फाइल डाउनलोड करने में असफल' : 'Failed to download file'),
         variant: "destructive",
       });
     } finally {
@@ -58,8 +60,10 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
   const handleViewInBrowser = async () => {
     if (!record?.file_url) {
       toast({
-        title: "No file attached",
-        description: "This record doesn't have an attached file",
+        title: t('language') === 'hi' ? 'कोई फाइल संलग्न नहीं' : 'No file attached',
+        description: t('language') === 'hi' 
+          ? 'इस रिकॉर्ड में कोई संलग्न फाइल नहीं है'
+          : "This record doesn't have an attached file",
         variant: "destructive",
       });
       return;
@@ -75,8 +79,8 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
     } catch (error: any) {
       console.error('View error:', error);
       toast({
-        title: "View failed",
-        description: error.message || "Failed to view file",
+        title: t('language') === 'hi' ? 'देखने में असफल' : 'View failed',
+        description: error.message || (t('language') === 'hi' ? 'फाइल देखने में असफल' : 'Failed to view file'),
         variant: "destructive",
       });
     } finally {
@@ -154,7 +158,7 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
             
             {record.doctor_name && (
               <p className="text-xs text-gray-500">
-                Added by: Dr. {record.doctor_name}
+                {t('language') === 'hi' ? 'द्वारा जोड़ा गया: डॉ.' : 'Added by: Dr.'} {record.doctor_name}
               </p>
             )}
           </div>
@@ -165,7 +169,7 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
               <div className="border rounded-lg p-4">
                 <h3 className="font-medium mb-3 flex items-center">
                   <FileText className="h-4 w-4 mr-2" />
-                  Attached Document
+                  {t('attachedDocument')}
                 </h3>
                 
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -191,12 +195,12 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
                     {isLoading ? (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                        Loading...
+                        {t('loading')}
                       </div>
                     ) : (
                       <>
                         <Eye className="h-4 w-4 mr-2" />
-                        {t('view')} in Browser
+                        {t('viewInBrowser')}
                       </>
                     )}
                   </Button>
@@ -215,19 +219,39 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800">
                     {isPdfFile(record.file_name) ? (
-                      <>
-                        <strong>PDF Document:</strong> Click "View in Browser" to open the PDF in a new tab for easy reading. 
-                        You can zoom, search, and navigate through pages.
-                      </>
+                      t('language') === 'hi' ? (
+                        <>
+                          <strong>PDF दस्तावेज़:</strong> आसान पढ़ने के लिए नए टैब में PDF खोलने के लिए "ब्राउज़र में देखें" पर क्लिक करें। 
+                          आप ज़ूम, खोज, और पेजों के बीच नेविगेट कर सकते हैं।
+                        </>
+                      ) : (
+                        <>
+                          <strong>PDF Document:</strong> Click "View in Browser" to open the PDF in a new tab for easy reading. 
+                          You can zoom, search, and navigate through pages.
+                        </>
+                      )
                     ) : isImageFile(record.file_name) ? (
-                      <>
-                        <strong>Image File:</strong> Click "View in Browser" to see the full-size image in a new tab.
-                      </>
+                      t('language') === 'hi' ? (
+                        <>
+                          <strong>छवि फाइल:</strong> नए टैब में पूर्ण आकार की छवि देखने के लिए "ब्राउज़र में देखें" पर क्लिक करें।
+                        </>
+                      ) : (
+                        <>
+                          <strong>Image File:</strong> Click "View in Browser" to see the full-size image in a new tab.
+                        </>
+                      )
                     ) : (
-                      <>
-                        <strong>Document:</strong> Click "View in Browser" to open the file in a new tab, 
-                        or use "Download" to save it to your device.
-                      </>
+                      t('language') === 'hi' ? (
+                        <>
+                          <strong>दस्तावेज़:</strong> नए टैब में फाइल खोलने के लिए "ब्राउज़र में देखें" पर क्लिक करें, 
+                          या इसे अपने डिवाइस में सेव करने के लिए "डाउनलोड" का उपयोग करें।
+                        </>
+                      ) : (
+                        <>
+                          <strong>Document:</strong> Click "View in Browser" to open the file in a new tab, 
+                          or use "Download" to save it to your device.
+                        </>
+                      )
                     )}
                   </p>
                 </div>
@@ -236,9 +260,14 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
           ) : (
             <div className="text-center py-8 text-gray-500">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No file attached</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {t('language') === 'hi' ? 'कोई फाइल संलग्न नहीं' : 'No file attached'}
+              </h3>
               <p className="text-gray-600">
-                This medical record doesn't have an attached document
+                {t('language') === 'hi' 
+                  ? 'इस मेडिकल रिकॉर्ड में कोई संलग्न दस्तावेज़ नहीं है'
+                  : "This medical record doesn't have an attached document"
+                }
               </p>
             </div>
           )}
@@ -246,7 +275,7 @@ export function DocumentViewer({ open, onOpenChange, record }: DocumentViewerPro
           <div className="flex justify-end space-x-2 pt-4 border-t">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4 mr-2" />
-              Close
+              {t('close')}
             </Button>
           </div>
         </div>

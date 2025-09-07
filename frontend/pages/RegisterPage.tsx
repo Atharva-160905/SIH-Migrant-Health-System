@@ -47,8 +47,8 @@ export function RegisterPage() {
     
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Password mismatch",
-        description: "Passwords do not match. Please check and try again.",
+        title: t('language') === 'hi' ? 'पासवर्ड मेल नहीं खाते' : 'Password mismatch',
+        description: t('passwordMismatch'),
         variant: "destructive",
       });
       return;
@@ -56,8 +56,8 @@ export function RegisterPage() {
 
     if (formData.password.length < 6) {
       toast({
-        title: "Weak password",
-        description: "Password must be at least 6 characters long",
+        title: t('language') === 'hi' ? 'कमज़ोर पासवर्ड' : 'Weak password',
+        description: t('weakPassword'),
         variant: "destructive",
       });
       return;
@@ -102,15 +102,19 @@ export function RegisterPage() {
       }
 
       toast({
-        title: "Account created successfully!",
-        description: `Welcome to ${t('appName')}. You can now sign in with your credentials.`,
+        title: t('language') === 'hi' ? 'खाता सफलतापूर्वक बनाया गया!' : 'Account created successfully!',
+        description: t('language') === 'hi' 
+          ? `${t('appName')} में आपका स्वागत है। अब आप अपनी credentials के साथ साइन इन कर सकते हैं।`
+          : `Welcome to ${t('appName')}. You can now sign in with your credentials.`,
       });
       navigate('/login');
     } catch (error: any) {
       console.error('Registration error:', error);
       toast({
-        title: "Registration failed",
-        description: error.message || "Failed to create account. Please try again.",
+        title: t('language') === 'hi' ? 'रजिस्ट्रेशन असफल' : 'Registration failed',
+        description: error.message || (t('language') === 'hi' 
+          ? 'खाता बनाने में असफल। कृपया पुन: प्रयास करें।'
+          : 'Failed to create account. Please try again.'),
         variant: "destructive",
       });
     } finally {
@@ -126,7 +130,7 @@ export function RegisterPage() {
             <div className="flex justify-between items-center mb-6">
               <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-500">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
+                {t('backToHome')}
               </Link>
               <LanguageToggle />
             </div>
@@ -137,10 +141,13 @@ export function RegisterPage() {
               </div>
             </div>
             <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              Create your account
+              {t('language') === 'hi' ? 'अपना खाता बनाएं' : 'Create your account'}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              Join {t('appName')} to manage your digital health records
+              {t('language') === 'hi' 
+                ? `अपने डिजिटल स्वास्थ्य रिकॉर्ड प्रबंधित करने के लिए ${t('appName')} में शामिल हों`
+                : `Join ${t('appName')} to manage your digital health records`
+              }
             </p>
           </div>
 
@@ -151,22 +158,24 @@ export function RegisterPage() {
                 {t('register')}
               </CardTitle>
               <CardDescription className="text-center">
-                Choose your role and fill in the required information
+                {t('createAccountDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Role Selection */}
                 <div>
-                  <Label htmlFor="role" className="text-sm font-medium">Account Type</Label>
+                  <Label htmlFor="role" className="text-sm font-medium">
+                    {t('accountType')}
+                  </Label>
                   <Select value={role} onValueChange={(value: 'patient' | 'doctor' | 'admin') => setRole(value)}>
                     <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Select your role" />
+                      <SelectValue placeholder={t('language') === 'hi' ? 'अपनी भूमिका चुनें' : 'Select your role'} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="patient">{t('patient')} - Manage my health records</SelectItem>
-                      <SelectItem value="doctor">{t('doctor')} - Access patient records</SelectItem>
-                      <SelectItem value="admin">{t('admin')} - System administration</SelectItem>
+                      <SelectItem value="patient">{t('patient')} - {t('patientDescription')}</SelectItem>
+                      <SelectItem value="doctor">{t('doctor')} - {t('doctorDescription')}</SelectItem>
+                      <SelectItem value="admin">{t('admin')} - {t('adminDescription')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -175,7 +184,7 @@ export function RegisterPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="email" className="text-sm font-medium">
-                      Email Address <span className="text-red-500">*</span>
+                      {t('language') === 'hi' ? 'ईमेल पता' : 'Email Address'} <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="email"
@@ -183,18 +192,18 @@ export function RegisterPage() {
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
                       required
-                      placeholder="Enter your email"
+                      placeholder={t('language') === 'hi' ? 'अपना ईमेल दर्ज करें' : 'Enter your email'}
                       className="mt-1"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                    <Label htmlFor="phone" className="text-sm font-medium">{t('phoneNumber')}</Label>
                     <Input
                       id="phone"
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="Enter your phone number"
+                      placeholder={t('language') === 'hi' ? 'अपना फोन नंबर दर्ज करें' : 'Enter your phone number'}
                       className="mt-1"
                     />
                   </div>
@@ -203,7 +212,7 @@ export function RegisterPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="password" className="text-sm font-medium">
-                      Password <span className="text-red-500">*</span>
+                      {t('password')} <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="password"
@@ -211,13 +220,13 @@ export function RegisterPage() {
                       value={formData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
                       required
-                      placeholder="Enter your password"
+                      placeholder={t('enterPassword')}
                       className="mt-1"
                     />
                   </div>
                   <div>
                     <Label htmlFor="confirmPassword" className="text-sm font-medium">
-                      Confirm Password <span className="text-red-500">*</span>
+                      {t('confirmPassword')} <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="confirmPassword"
@@ -225,7 +234,7 @@ export function RegisterPage() {
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                       required
-                      placeholder="Confirm your password"
+                      placeholder={t('language') === 'hi' ? 'अपने पासवर्ड की पुष्टि करें' : 'Confirm your password'}
                       className="mt-1"
                     />
                   </div>
@@ -236,27 +245,27 @@ export function RegisterPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="first_name" className="text-sm font-medium">
-                        First Name <span className="text-red-500">*</span>
+                        {t('firstName')} <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id="first_name"
                         value={formData.first_name}
                         onChange={(e) => handleInputChange('first_name', e.target.value)}
                         required
-                        placeholder="Enter your first name"
+                        placeholder={t('language') === 'hi' ? 'अपना पहला नाम दर्ज करें' : 'Enter your first name'}
                         className="mt-1"
                       />
                     </div>
                     <div>
                       <Label htmlFor="last_name" className="text-sm font-medium">
-                        Last Name <span className="text-red-500">*</span>
+                        {t('lastName')} <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id="last_name"
                         value={formData.last_name}
                         onChange={(e) => handleInputChange('last_name', e.target.value)}
                         required
-                        placeholder="Enter your last name"
+                        placeholder={t('language') === 'hi' ? 'अपना अंतिम नाम दर्ज करें' : 'Enter your last name'}
                         className="mt-1"
                       />
                     </div>
@@ -267,35 +276,37 @@ export function RegisterPage() {
                   <>
                     <div>
                       <Label htmlFor="license_number" className="text-sm font-medium">
-                        Medical License Number <span className="text-red-500">*</span>
+                        {t('language') === 'hi' ? 'मेडिकल लाइसेंस नंबर' : 'Medical License Number'} <span className="text-red-500">*</span>
                       </Label>
                       <Input
                         id="license_number"
                         value={formData.license_number}
                         onChange={(e) => handleInputChange('license_number', e.target.value)}
                         required
-                        placeholder="Enter your medical license number"
+                        placeholder={t('language') === 'hi' ? 'अपना मेडिकल लाइसेंस नंबर दर्ज करें' : 'Enter your medical license number'}
                         className="mt-1"
                       />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="specialization" className="text-sm font-medium">Specialization</Label>
+                        <Label htmlFor="specialization" className="text-sm font-medium">{t('specialization')}</Label>
                         <Input
                           id="specialization"
                           value={formData.specialization}
                           onChange={(e) => handleInputChange('specialization', e.target.value)}
-                          placeholder="e.g., Cardiology, Pediatrics"
+                          placeholder={t('language') === 'hi' ? 'जैसे, कार्डियोलॉजी, बाल चिकित्सा' : 'e.g., Cardiology, Pediatrics'}
                           className="mt-1"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="hospital_affiliation" className="text-sm font-medium">Hospital/Clinic</Label>
+                        <Label htmlFor="hospital_affiliation" className="text-sm font-medium">
+                          {t('language') === 'hi' ? 'अस्पताल/क्लिनिक' : 'Hospital/Clinic'}
+                        </Label>
                         <Input
                           id="hospital_affiliation"
                           value={formData.hospital_affiliation}
                           onChange={(e) => handleInputChange('hospital_affiliation', e.target.value)}
-                          placeholder="Enter hospital or clinic name"
+                          placeholder={t('language') === 'hi' ? 'अस्पताल या क्लिनिक का नाम दर्ज करें' : 'Enter hospital or clinic name'}
                           className="mt-1"
                         />
                       </div>
@@ -307,7 +318,7 @@ export function RegisterPage() {
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <Label htmlFor="date_of_birth" className="text-sm font-medium">Date of Birth</Label>
+                        <Label htmlFor="date_of_birth" className="text-sm font-medium">{t('dateOfBirth')}</Label>
                         <Input
                           id="date_of_birth"
                           type="date"
@@ -317,23 +328,23 @@ export function RegisterPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="gender" className="text-sm font-medium">Gender</Label>
+                        <Label htmlFor="gender" className="text-sm font-medium">{t('gender')}</Label>
                         <Select value={formData.gender} onValueChange={(value) => handleInputChange('gender', value)}>
                           <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Select gender" />
+                            <SelectValue placeholder={t('selectGender')} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="male">{t('male')}</SelectItem>
+                            <SelectItem value="female">{t('female')}</SelectItem>
+                            <SelectItem value="other">{t('language') === 'hi' ? 'अन्य' : 'Other'}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="blood_type" className="text-sm font-medium">Blood Type</Label>
+                        <Label htmlFor="blood_type" className="text-sm font-medium">{t('bloodType')}</Label>
                         <Select value={formData.blood_type} onValueChange={(value) => handleInputChange('blood_type', value)}>
                           <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Select blood type" />
+                            <SelectValue placeholder={t('selectBloodType')} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="A+">A+</SelectItem>
@@ -351,35 +362,39 @@ export function RegisterPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="emergency_contact_name" className="text-sm font-medium">Emergency Contact Name</Label>
+                        <Label htmlFor="emergency_contact_name" className="text-sm font-medium">
+                          {t('language') === 'hi' ? 'आपातकालीन संपर्क नाम' : 'Emergency Contact Name'}
+                        </Label>
                         <Input
                           id="emergency_contact_name"
                           value={formData.emergency_contact_name}
                           onChange={(e) => handleInputChange('emergency_contact_name', e.target.value)}
-                          placeholder="Enter emergency contact name"
+                          placeholder={t('language') === 'hi' ? 'आपातकालीन संपर्क नाम दर्ज करें' : 'Enter emergency contact name'}
                           className="mt-1"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="emergency_contact_phone" className="text-sm font-medium">Emergency Contact Phone</Label>
+                        <Label htmlFor="emergency_contact_phone" className="text-sm font-medium">
+                          {t('language') === 'hi' ? 'आपातकालीन संपर्क फोन' : 'Emergency Contact Phone'}
+                        </Label>
                         <Input
                           id="emergency_contact_phone"
                           type="tel"
                           value={formData.emergency_contact_phone}
                           onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
-                          placeholder="Enter emergency contact phone"
+                          placeholder={t('language') === 'hi' ? 'आपातकालीन संपर्क फोन दर्ज करें' : 'Enter emergency contact phone'}
                           className="mt-1"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <Label htmlFor="address" className="text-sm font-medium">Address</Label>
+                      <Label htmlFor="address" className="text-sm font-medium">{t('address')}</Label>
                       <Textarea
                         id="address"
                         value={formData.address}
                         onChange={(e) => handleInputChange('address', e.target.value)}
-                        placeholder="Enter your address"
+                        placeholder={t('language') === 'hi' ? 'अपना पता दर्ज करें' : 'Enter your address'}
                         rows={2}
                         className="mt-1"
                       />
@@ -387,23 +402,23 @@ export function RegisterPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="allergies" className="text-sm font-medium">Allergies</Label>
+                        <Label htmlFor="allergies" className="text-sm font-medium">{t('allergies')}</Label>
                         <Textarea
                           id="allergies"
                           value={formData.allergies}
                           onChange={(e) => handleInputChange('allergies', e.target.value)}
-                          placeholder="List any allergies"
+                          placeholder={t('language') === 'hi' ? 'कोई एलर्जी सूचीबद्ध करें' : 'List any allergies'}
                           rows={2}
                           className="mt-1"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="medical_conditions" className="text-sm font-medium">Medical Conditions</Label>
+                        <Label htmlFor="medical_conditions" className="text-sm font-medium">{t('medicalConditions')}</Label>
                         <Textarea
                           id="medical_conditions"
                           value={formData.medical_conditions}
                           onChange={(e) => handleInputChange('medical_conditions', e.target.value)}
-                          placeholder="List any existing medical conditions"
+                          placeholder={t('language') === 'hi' ? 'कोई मौजूदा मेडिकल स्थितियां सूचीबद्ध करें' : 'List any existing medical conditions'}
                           rows={2}
                           className="mt-1"
                         />
@@ -421,19 +436,19 @@ export function RegisterPage() {
                   {isLoading ? (
                     <div className="flex items-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                      Creating Account...
+                      {t('language') === 'hi' ? 'खाता बनाया जा रहा है...' : 'Creating Account...'}
                     </div>
                   ) : (
-                    'Create Account'
+                    t('createAccount')
                   )}
                 </Button>
               </form>
 
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
-                  Already have an account?{' '}
+                  {t('language') === 'hi' ? 'पहले से खाता है?' : 'Already have an account?'}{' '}
                   <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                    Sign in here
+                    {t('language') === 'hi' ? 'यहाँ साइन इन करें' : 'Sign in here'}
                   </Link>
                 </p>
               </div>

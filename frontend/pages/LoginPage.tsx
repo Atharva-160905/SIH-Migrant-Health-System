@@ -25,14 +25,16 @@ export function LoginPage() {
     try {
       await login(email, password);
       toast({
-        title: "Welcome back!",
-        description: "You have been signed in successfully",
+        title: t('language') === 'hi' ? 'वापस स्वागत है!' : 'Welcome back!',
+        description: t('language') === 'hi' 
+          ? 'आप सफलतापूर्वक साइन इन हो गए हैं'
+          : 'You have been signed in successfully',
       });
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
-        title: "Sign in failed",
-        description: error.message || "Invalid email or password",
+        title: t('language') === 'hi' ? 'साइन इन असफल' : 'Sign in failed',
+        description: error.message || (t('language') === 'hi' ? 'अमान्य ईमेल या पासवर्ड' : 'Invalid email or password'),
         variant: "destructive",
       });
     } finally {
@@ -48,7 +50,7 @@ export function LoginPage() {
             <div className="flex justify-between items-center mb-6">
               <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-500">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
+                {t('backToHome')}
               </Link>
               <LanguageToggle />
             </div>
@@ -62,7 +64,10 @@ export function LoginPage() {
               {t('welcomeBack')}
             </h2>
             <p className="mt-2 text-sm text-gray-600">
-              Sign in to access your health records
+              {t('language') === 'hi' 
+                ? 'अपने स्वास्थ्य रिकॉर्ड तक पहुंचने के लिए साइन इन करें'
+                : 'Sign in to access your health records'
+              }
             </p>
           </div>
 
@@ -70,33 +75,37 @@ export function LoginPage() {
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl text-center">{t('login')}</CardTitle>
               <CardDescription className="text-center">
-                Enter your email and password to access your account
+                {t('signInDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    {t('language') === 'hi' ? 'ईमेल पता' : 'Email Address'}
+                  </Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="Enter your email address"
+                    placeholder={t('enterEmail')}
                     className="mt-1"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                  <Label htmlFor="password" className="text-sm font-medium">
+                    {t('password')}
+                  </Label>
                   <Input
                     id="password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    placeholder="Enter your password"
+                    placeholder={t('enterPassword')}
                     className="mt-1"
                   />
                 </div>
@@ -110,7 +119,7 @@ export function LoginPage() {
                   {isLoading ? (
                     <div className="flex items-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                      Signing in...
+                      {t('language') === 'hi' ? 'साइन इन हो रहे हैं...' : 'Signing in...'}
                     </div>
                   ) : (
                     t('login')
@@ -120,20 +129,22 @@ export function LoginPage() {
 
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
-                  Don't have an account?{' '}
+                  {t('language') === 'hi' ? 'खाता नहीं है?' : "Don't have an account?"}{' '}
                   <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                    Create one here
+                    {t('language') === 'hi' ? 'यहाँ बनाएं' : 'Create one here'}
                   </Link>
                 </p>
               </div>
 
               {/* Demo Accounts */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-600 text-center mb-2">Demo Accounts (for testing)</p>
+                <p className="text-xs text-gray-600 text-center mb-2">
+                  {t('demoAccounts')}
+                </p>
                 <div className="text-xs text-gray-500 space-y-1">
-                  <div>Patient: patient@demo.com / password</div>
-                  <div>Doctor: doctor@demo.com / password</div>
-                  <div>Admin: admin@demo.com / password</div>
+                  <div>{t('patient')}: patient@demo.com / password</div>
+                  <div>{t('doctor')}: doctor@demo.com / password</div>
+                  <div>{t('admin')}: admin@demo.com / password</div>
                 </div>
               </div>
             </CardContent>

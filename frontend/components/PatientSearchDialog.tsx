@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, FileText, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { useLanguage } from '../contexts/LanguageContext';
 import backend from '~backend/client';
 
 interface PatientSearchDialogProps {
@@ -32,6 +33,7 @@ export function PatientSearchDialog({
   const [isSearching, setIsSearching] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleSearch = async () => {
     if (!medicalId.trim()) return;
@@ -50,8 +52,10 @@ export function PatientSearchDialog({
     } catch (error: any) {
       console.error('Search error:', error);
       toast({
-        title: "Patient not found",
-        description: "No patient found with this Medical ID",
+        title: t('patientNotFound'),
+        description: t('language') === 'hi' 
+          ? 'इस मेडिकल आईडी के साथ कोई मरीज़ नहीं मिला'
+          : 'No patient found with this Medical ID',
         variant: "destructive",
       });
       setPatient(null);
@@ -69,18 +73,20 @@ export function PatientSearchDialog({
       await backend.health.requestAccess({
         patient_id: patient.id,
         doctor_id: doctorId,
-        reason: "Request access to view and update medical records",
+        reason: t('language') === 'hi' 
+          ? 'मेडिकल रिकॉर्ड देखने और अपडेट करने के लिए पहुंच का अनुरोध'
+          : 'Request access to view and update medical records',
       });
 
       toast({
-        title: "Access requested",
-        description: "Access request sent to patient for approval",
+        title: t('language') === 'hi' ? 'पहुंच का अनुरोध किया गया' : 'Access requested',
+        description: t('accessRequestSent'),
       });
     } catch (error: any) {
       console.error('Request access error:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to request access",
+        title: t('error'),
+        description: error.message || (t('language') === 'hi' ? 'पहुंच का अनुरोध करने में असफल' : 'Failed to request access'),
         variant: "destructive",
       });
     } finally {
@@ -101,21 +107,24 @@ export function PatientSearchDialog({
     }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Search Patient</DialogTitle>
+          <DialogTitle>{t('search')} {t('patient')}</DialogTitle>
           <DialogDescription>
-            Search for a patient using their Medical ID
+            {t('language') === 'hi' 
+              ? 'मेडिकल आईडी का उपयोग करके मरीज़ खोजें'
+              : 'Search for a patient using their Medical ID'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="medicalId">Medical ID</Label>
+            <Label htmlFor="medicalId">{t('medicalId')}</Label>
             <div className="flex space-x-2">
               <Input
                 id="medicalId"
                 value={medicalId}
                 onChange={(e) => setMedicalId(e.target.value)}
-                placeholder="Enter Medical ID"
+                placeholder={t('enterMedicalId')}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
               <Button onClick={handleSearch} disabled={isSearching}>
@@ -132,27 +141,31 @@ export function PatientSearchDialog({
                     <h3 className="font-medium text-lg">
                       {patient.first_name} {patient.last_name}
                     </h3>
-                    <p className="text-sm text-gray-600">Medical ID: {patient.medical_id}</p>
+                    <p className="text-sm text-gray-600">{t('medicalId')}: {patient.medical_id}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     {patient.date_of_birth && (
                       <div>
-                        <span className="font-medium">DOB:</span> {new Date(patient.date_of_birth).toLocaleDateString()}
+                        <span className="font-medium">
+                          {t('language') === 'hi' ? 'जन्म तिथि:' : 'DOB:'}
+                        </span> {new Date(patient.date_of_birth).toLocaleDateString()}
                       </div>
                     )}
                     {patient.gender && (
                       <div>
-                        <span className="font-medium">Gender:</span> {patient.gender}
+                        <span className="font-medium">{t('gender')}:</span> {patient.gender}
                       </div>
                     )}
                   </div>
 
                   <div className="flex items-center space-x-2">
                     {accessStatus?.has_access ? (
-                      <Badge variant="default">Access Granted</Badge>
+                      <Badge variant="default">{t('accessGranted')}</Badge>
                     ) : (
-                      <Badge variant="outline">No Access</Badge>
+                      <Badge variant="outline">
+                        {t('language') === 'hi' ? 'पहुंच नहीं' : 'No Access'}
+                      </Badge>
                     )}
                   </div>
 
@@ -168,7 +181,7 @@ export function PatientSearchDialog({
                           className="flex-1"
                         >
                           <FileText className="h-4 w-4 mr-2" />
-                          Add Record
+                          {t('addRecord')}
                         </Button>
                         <Button
                           size="sm"
@@ -180,7 +193,7 @@ export function PatientSearchDialog({
                           className="flex-1"
                         >
                           <AlertTriangle className="h-4 w-4 mr-2" />
-                          Create Alert
+                          {t('createAlert')}
                         </Button>
                       </>
                     ) : (
@@ -189,7 +202,10 @@ export function PatientSearchDialog({
                         disabled={isRequesting}
                         className="w-full"
                       >
-                        {isRequesting ? 'Requesting...' : 'Request Access'}
+                        {isRequesting ? 
+                          (t('language') === 'hi' ? 'अनुरोध कर रहे हैं...' : 'Requesting...') : 
+                          t('requestAccessButton')
+                        }
                       </Button>
                     )}
                   </div>

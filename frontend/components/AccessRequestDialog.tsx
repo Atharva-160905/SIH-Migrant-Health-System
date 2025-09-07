@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AccessRequest {
   id: number;
@@ -27,22 +28,27 @@ export function AccessRequestDialog({
   requests,
   onRespond,
 }: AccessRequestDialogProps) {
+  const { t } = useLanguage();
+
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       pending: "outline",
       approved: "default",
       denied: "destructive",
     };
-    return <Badge variant={variants[status]}>{status}</Badge>;
+    return <Badge variant={variants[status]}>{t(status)}</Badge>;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Access Requests</DialogTitle>
+          <DialogTitle>{t('accessRequests')}</DialogTitle>
           <DialogDescription>
-            Review all access requests from doctors
+            {t('language') === 'hi' 
+              ? 'डॉक्टरों से सभी पहुंच अनुरोधों की समीक्षा करें'
+              : 'Review all access requests from doctors'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -51,12 +57,14 @@ export function AccessRequestDialog({
             <div key={request.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-medium">Dr. {request.doctor_name}</h3>
+                  <h3 className="font-medium">
+                    {t('language') === 'hi' ? 'डॉ.' : 'Dr.'} {request.doctor_name}
+                  </h3>
                   <p className="text-sm text-gray-600 mt-1">{request.reason}</p>
                   <div className="flex items-center space-x-2 mt-2">
                     {getStatusBadge(request.status)}
                     <span className="text-xs text-gray-500">
-                      Requested: {new Date(request.requested_at).toLocaleDateString()}
+                      {t('requested')}: {new Date(request.requested_at).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -67,14 +75,14 @@ export function AccessRequestDialog({
                       size="sm"
                       onClick={() => onRespond(request.id, 'approved')}
                     >
-                      Approve
+                      {t('approve')}
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={() => onRespond(request.id, 'denied')}
                     >
-                      Deny
+                      {t('deny')}
                     </Button>
                   </div>
                 )}
@@ -84,7 +92,10 @@ export function AccessRequestDialog({
           
           {requests.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              No access requests found.
+              {t('language') === 'hi' 
+                ? 'कोई पहुंच अनुरोध नहीं मिला।'
+                : 'No access requests found.'
+              }
             </div>
           )}
         </div>

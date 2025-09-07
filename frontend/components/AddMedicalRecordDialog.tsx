@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 import { Upload, FileText, X } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 import backend from '~backend/client';
 
 interface AddMedicalRecordDialogProps {
@@ -35,17 +36,22 @@ export function AddMedicalRecordDialog({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState('');
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const validateFile = (file: File): string | null => {
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
     const maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!allowedTypes.includes(file.type)) {
-      return 'Only PDF, JPG, JPEG, and PNG files are allowed';
+      return t('language') === 'hi' 
+        ? 'केवल PDF, JPG, JPEG, और PNG फाइलों की अनुमति है'
+        : 'Only PDF, JPG, JPEG, and PNG files are allowed';
     }
 
     if (file.size > maxSize) {
-      return 'File size must be less than 10MB';
+      return t('language') === 'hi'
+        ? 'फाइल का आकार 10MB से कम होना चाहिए'
+        : 'File size must be less than 10MB';
     }
 
     return null;
@@ -107,8 +113,10 @@ export function AddMedicalRecordDialog({
     
     if (!formData.title.trim()) {
       toast({
-        title: "Validation Error",
-        description: "Please enter a title for the medical record",
+        title: t('validationError'),
+        description: t('language') === 'hi' 
+          ? 'कृपया मेडिकल रिकॉर्ड के लिए एक शीर्षक दर्ज करें'
+          : 'Please enter a title for the medical record',
         variant: "destructive",
       });
       return;
@@ -145,7 +153,7 @@ export function AddMedicalRecordDialog({
           console.log('File upload completed successfully');
         } catch (uploadError) {
           console.error('File upload error:', uploadError);
-          throw new Error(`File upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+          throw new Error(`${t('uploadFailed')}: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
         }
       }
 
@@ -173,8 +181,8 @@ export function AddMedicalRecordDialog({
       });
 
       toast({
-        title: "Success",
-        description: "Medical record has been added successfully",
+        title: t('success'),
+        description: t('recordAdded'),
       });
 
       // Reset form
@@ -191,8 +199,8 @@ export function AddMedicalRecordDialog({
     } catch (error: any) {
       console.error('Error adding record:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to add medical record",
+        title: t('error'),
+        description: error.message || (t('language') === 'hi' ? 'मेडिकल रिकॉर्ड जोड़ने में असफल' : 'Failed to add medical record'),
         variant: "destructive",
       });
     } finally {
@@ -215,64 +223,73 @@ export function AddMedicalRecordDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <FileText className="h-5 w-5 mr-2" />
-            Add Medical Record
+            {t('addMedicalRecord')}
           </DialogTitle>
           <DialogDescription>
-            Add a new medical record for the patient. You can attach files like PDFs, images, or reports.
+            {t('language') === 'hi' 
+              ? 'मरीज़ के लिए एक नया मेडिकल रिकॉर्ड जोड़ें। आप PDF, छवियां, या रिपोर्ट जैसी फाइलें संलग्न कर सकते हैं।'
+              : 'Add a new medical record for the patient. You can attach files like PDFs, images, or reports.'
+            }
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="title" className="text-sm font-medium">
-              Title <span className="text-red-500">*</span>
+              {t('recordTitle')} <span className="text-red-500">*</span>
             </Label>
             <Input
               id="title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required
-              placeholder="Enter record title (e.g., Blood Test Results)"
+              placeholder={t('language') === 'hi' 
+                ? 'रिकॉर्ड शीर्षक दर्ज करें (जैसे, रक्त परीक्षण परिणाम)'
+                : 'Enter record title (e.g., Blood Test Results)'
+              }
               className="mt-1"
             />
           </div>
 
           <div>
             <Label htmlFor="record_type" className="text-sm font-medium">
-              Record Type <span className="text-red-500">*</span>
+              {t('recordType')} <span className="text-red-500">*</span>
             </Label>
             <Select
               value={formData.record_type}
               onValueChange={(value: any) => setFormData(prev => ({ ...prev, record_type: value }))}
             >
               <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select record type" />
+                <SelectValue placeholder={t('selectRecordType')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="prescription">Prescription</SelectItem>
-                <SelectItem value="lab_result">Lab Result</SelectItem>
-                <SelectItem value="diagnosis">Diagnosis</SelectItem>
-                <SelectItem value="treatment">Treatment</SelectItem>
-                <SelectItem value="vaccination">Vaccination</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="prescription">{t('prescription')}</SelectItem>
+                <SelectItem value="lab_result">{t('labResult')}</SelectItem>
+                <SelectItem value="diagnosis">{t('diagnosis')}</SelectItem>
+                <SelectItem value="treatment">{t('treatment')}</SelectItem>
+                <SelectItem value="vaccination">{t('vaccination')}</SelectItem>
+                <SelectItem value="other">{t('other')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
-            <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+            <Label htmlFor="description" className="text-sm font-medium">{t('recordDescription')}</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Enter record description or notes"
+              placeholder={t('language') === 'hi' 
+                ? 'रिकॉर्ड विवरण या नोट्स दर्ज करें'
+                : 'Enter record description or notes'
+              }
               rows={3}
               className="mt-1"
             />
           </div>
 
           <div>
-            <Label htmlFor="file" className="text-sm font-medium">Attach File</Label>
+            <Label htmlFor="file" className="text-sm font-medium">{t('attachFile')}</Label>
             
             {!formData.file ? (
               <div className="mt-1">
@@ -283,9 +300,9 @@ export function AddMedicalRecordDialog({
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <Upload className="w-8 h-8 mb-2 text-gray-400" />
                     <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
+                      <span className="font-semibold">{t('clickToUpload')}</span> {t('dragAndDrop')}
                     </p>
-                    <p className="text-xs text-gray-500">PDF, PNG, JPG (MAX. 10MB)</p>
+                    <p className="text-xs text-gray-500">{t('fileTypeRestriction')}</p>
                   </div>
                   <Input
                     id="file"
@@ -326,9 +343,11 @@ export function AddMedicalRecordDialog({
 
           {isLoading && uploadProgress > 0 && uploadProgress < 100 && (
             <div>
-              <Label className="text-sm font-medium">Upload Progress</Label>
+              <Label className="text-sm font-medium">{t('uploadProgress')}</Label>
               <Progress value={uploadProgress} className="mt-1" />
-              <p className="text-xs text-gray-600 mt-1">{Math.round(uploadProgress)}% uploaded</p>
+              <p className="text-xs text-gray-600 mt-1">
+                {Math.round(uploadProgress)}% {t('language') === 'hi' ? 'अपलोड हो गया' : 'uploaded'}
+              </p>
             </div>
           )}
 
@@ -339,7 +358,7 @@ export function AddMedicalRecordDialog({
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button 
               type="submit" 
@@ -347,9 +366,9 @@ export function AddMedicalRecordDialog({
               className="bg-blue-600 hover:bg-blue-700"
             >
               {isLoading ? (
-                formData.file ? 'Uploading...' : 'Adding...'
+                formData.file ? t('uploading') : t('adding')
               ) : (
-                'Add Record'
+                t('addRecord')
               )}
             </Button>
           </div>
