@@ -142,9 +142,7 @@ export function LoginPage() {
                   {t('demoAccounts')}
                 </p>
                 <div className="text-xs text-gray-500 space-y-1">
-                  <div>{t('patient')}: patient@demo.com / password</div>
-                  <div>{t('doctor')}: doctor@demo.com / password</div>
-                  <div>{t('admin')}: admin@demo.com / password</div>
+                  
                 </div>
               </div>
             </CardContent>
